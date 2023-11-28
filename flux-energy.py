@@ -4,6 +4,7 @@ import typing
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+import numpy
 
 from eprempy import eprem
 from eprempy.paths import fullpath
@@ -77,14 +78,20 @@ def add_panel(
     radius = stream['radius'].withunit('au')
     energy = stream['energy'].withunit('MeV')
     flux = stream['flux'].withunit('1 / (cm^2 s sr MeV)')
-    shells = (0, 50, 100, 200, 250)
-    it = 15
-    for shell in shells:
-        r = float(radius[it, shell].squeezed)
+    time = 1.0, 'day'
+    r = float(radius[time, 0].squeezed)
+    ax.plot(
+        energy[:].squeezed,
+        flux[time, 0, 'H+', :].squeezed,
+        'k:',
+        label=f"r = {r:4.2f} au",
+    )
+    radii = numpy.linspace(0.5, 3.5, 7)
+    for r in radii:
         ax.plot(
             energy[:].squeezed,
-            flux[it, shell, 'H+', :].squeezed,
-            label=f"r = {r:4.2f} au"
+            flux[time, (r, 'au'), 'H+', :].squeezed,
+            label=f"r = {r:4.2f} au",
         )
     ax.set_xlabel("Energy [MeV]")
     ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV)]")
