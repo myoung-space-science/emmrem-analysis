@@ -92,7 +92,7 @@ def add_panel(
     ax.set_ylim(1e-2, 1e6)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_title(rf"$\gamma =$ {float(stream['boundaryFunctGamma'])}")
+    ax.set_title(str(stream.dataset.source.parent.stem))
     ax.label_outer()
 
 
