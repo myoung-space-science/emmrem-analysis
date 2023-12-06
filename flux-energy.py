@@ -34,7 +34,7 @@ def main(
         add_panel(ax, num, config=config, source=path, **user)
     flataxs[0].legend()
     fig.tight_layout()
-    plotdir = fullpath(outdir) or pathlib.Path.cwd()
+    plotdir = fullpath(outdir or '.')
     plotpath = plotdir / 'flux-energy.png'
     if verbose:
         print(f"Saved {plotpath}")
