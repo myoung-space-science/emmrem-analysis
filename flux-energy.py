@@ -117,12 +117,13 @@ def add_panel(
     ax.label_outer()
 
 
+# NOTE: These functions allow for the possibility that `user` contains `None`
+# for a given coordinate or its unit, and treat each case as if `user` did not
+# contain the corresponding key(s) at all. This is necessary since the CLI will
+# populate `user` with explicit null values for missing parameters.
+
 def get_time(user: dict):
     """Get an appropriate time index from user input."""
-    # NOTE: This function allows for the possibility that `user` contains `None`
-    # for 'time' or 'time_unit', and treats each case the same as if it did not
-    # contain the corresponding key at all. This is necessary since the CLI will
-    # populate `user` with explicit null values for missing parameters.
     time = user.get('time')
     if time is None:
         return 0
