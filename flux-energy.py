@@ -137,7 +137,11 @@ def get_time(user: dict):
     time = user.get('time')
     if time is None:
         return 0
-    return time, user.get('time_unit') or 'day'
+    if len(time) == 1:
+        return int(time[0])
+    if len(time) == 2:
+        return float(time[0]), time[1]
+    raise ValueError(time)
 
 
 def get_shell(user: dict):
@@ -195,12 +199,12 @@ if __name__ == '__main__':
     )
     p.add_argument(
         '--time',
-        help="time at which to plot flux (default: initial time step)",
-        type=float,
-    )
-    p.add_argument(
-        '--time_unit',
-        help="unit of plot time (default: day)",
+        help=(
+            "time at which to plot flux (default: initial time step)"
+            ";\nmay consist of a single integer or a value-unit pair"
+        ),
+        nargs='+',
+        metavar=('TIME', 'UNIT'),
     )
     p.add_argument(
         '--shell',
