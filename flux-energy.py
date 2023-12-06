@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 from eprempy import eprem
+from eprempy import quantity
 from eprempy.paths import fullpath
 
 
@@ -105,7 +106,7 @@ def add_panel(
         ax.plot(
             energy[:].squeezed,
             flux[time, r, 'H+', :].squeezed,
-            label=f"r = {r[0]:4.2f} au",
+            label=f"r = {float(r):4.2f} au",
         )
     ax.set_prop_cycle(None)
     shells = get_shell(user)
@@ -157,8 +158,15 @@ def get_radius(user: dict):
     radius = user.get('radius')
     if radius is None:
         return ()
-    unit = user.get('radius_unit') or 'au'
-    return tuple((r, unit) for r in radius)
+    if len(radius) == 1:
+        return quantity.measure(radius[0], 'au')
+    try:
+        float(radius[-1])
+    except ValueError:
+        unit = radius[-1]
+        values = [float(r) for r in radius[:-1]]
+        return quantity.measure(*values, unit).withunit('au')
+    return quantity.measure(radius, 'au')
 
 
 if __name__ == '__main__':
@@ -216,13 +224,8 @@ if __name__ == '__main__':
     p.add_argument(
         '--radius',
         help="radius(-ii) at which to plot flux (default: inner boundary)",
-        type=float,
-        nargs='*',
-        metavar=('R0', 'R1'),
-    )
-    p.add_argument(
-        '--radius_unit',
-        help="unit of plot radius(-ii) (default: au)",
+        nargs='+',
+        metavar=('R0 [R1 ...]', 'UNIT'),
     )
     p.add_argument(
         '-v',
