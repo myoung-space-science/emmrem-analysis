@@ -131,6 +131,7 @@ def get_time(user: dict):
 
 
 def get_radius(user: dict):
+    """Get appropriate radial indices from user input."""
     radius = user.get('radius')
     if radius is None:
         return ()
