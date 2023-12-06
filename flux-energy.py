@@ -125,7 +125,7 @@ if __name__ == '__main__':
         '-i',
         '--input',
         dest='indir',
-        help="directory containing simulation data (default: current dir.)",
+        help="directory containing simulation data (default: current)",
     )
     p.add_argument(
         '-r',
