@@ -44,7 +44,17 @@ def build_paths(
     indir: str=None,
     runs: typing.Union[str, typing.Iterable[str]]=None,
 ) -> typing.Tuple[pathlib.Path]:
-    """Convert user input into full paths."""
+    """Convert user input into full paths.
+
+    Parameters
+    ----------
+    indir : string, optional
+        The path to a single simulation directory or the parent path of multiple
+        simulation directories.
+    runs : string or iterable of strings, optional
+        The name of a simulation run or a globbing pattern representing multiple
+        simulation runs.
+    """
     if runs is None and indir is None:
         raise ValueError(
             "Not enough information to build paths"
@@ -55,8 +65,9 @@ def build_paths(
         return tuple(fullpath(run) for run in runs)
     path = fullpath(indir)
     if runs is None:
-        if path.is_dir():
-            return tuple(path.glob('*'))
+        contents = tuple(path.glob('*'))
+        if path.is_dir() and all(p.is_dir() for p in contents):
+            return contents
         return (path,)
     if len(runs) == 1:
         return tuple(path / run for run in path.glob(runs[0]))
