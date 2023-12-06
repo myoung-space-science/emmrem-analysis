@@ -107,6 +107,16 @@ def add_panel(
             flux[time, r, 'H+', :].squeezed,
             label=f"r = {r[0]:4.2f} au",
         )
+    ax.set_prop_cycle(None)
+    shells = get_shell(user)
+    for s in shells:
+        ax.plot(
+            energy[:].squeezed,
+            flux[time, s, 'H+', :].squeezed,
+            label=f"shell = {s}",
+            linestyle='none',
+            marker='o',
+        )
     ax.set_xlabel("Energy [MeV]")
     ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV)]")
     ax.set_xlim(1e-1, 1e1)
@@ -128,6 +138,14 @@ def get_time(user: dict):
     if time is None:
         return 0
     return time, user.get('time_unit') or 'day'
+
+
+def get_shell(user: dict):
+    """Get appropriate shell indices from user input."""
+    shell = user.get('shell')
+    if shell is None:
+        return ()
+    return tuple(shell)
 
 
 def get_radius(user: dict):
@@ -183,6 +201,12 @@ if __name__ == '__main__':
     p.add_argument(
         '--time_unit',
         help="unit of plot time (default: day)",
+    )
+    p.add_argument(
+        '--shell',
+        help="shell(s) at which to plot flux (default: 0)",
+        type=int,
+        nargs='*',
     )
     p.add_argument(
         '--radius',
