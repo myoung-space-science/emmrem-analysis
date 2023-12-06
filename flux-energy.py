@@ -179,7 +179,6 @@ if __name__ == '__main__':
         '--time',
         help="time at which to plot flux (default: initial time step)",
         type=float,
-        nargs=1,
     )
     p.add_argument(
         '--time_unit',
