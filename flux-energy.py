@@ -210,7 +210,8 @@ if __name__ == '__main__':
         '--shell',
         help="shell(s) at which to plot flux (default: 0)",
         type=int,
-        nargs='*',
+        nargs='+',
+        metavar=('S0', 'S1'),
     )
     p.add_argument(
         '--radius',
