@@ -4,7 +4,6 @@ import typing
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-import numpy
 
 from eprempy import eprem
 from eprempy.paths import fullpath
@@ -94,19 +93,19 @@ def add_panel(
     energy = stream['energy'].withunit('MeV')
     flux = stream['flux'].withunit('1 / (cm^2 s sr MeV)')
     time = get_time(user)
-    r = float(radius[time, 0].squeezed)
+    r0 = float(radius[time, 0].squeezed)
     ax.plot(
         energy[:].squeezed,
         flux[time, 0, 'H+', :].squeezed,
         'k:',
-        label=f"r = {r:4.2f} au",
+        label=f"r = {r0:4.2f} au",
     )
-    radii = numpy.linspace(0.5, 3.5, 7)
+    radii = get_radius(user)
     for r in radii:
         ax.plot(
             energy[:].squeezed,
-            flux[time, (r, 'au'), 'H+', :].squeezed,
-            label=f"r = {r:4.2f} au",
+            flux[time, r, 'H+', :].squeezed,
+            label=f"r = {r[0]:4.2f} au",
         )
     ax.set_xlabel("Energy [MeV]")
     ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV)]")
@@ -128,6 +127,14 @@ def get_time(user: dict):
     if time is None:
         return 0
     return time, user.get('time_unit') or 'day'
+
+
+def get_radius(user: dict):
+    radius = user.get('radius')
+    if radius is None:
+        return ()
+    unit = user.get('radius_unit') or 'au'
+    return tuple((r, unit) for r in radius)
 
 
 if __name__ == '__main__':
@@ -175,6 +182,17 @@ if __name__ == '__main__':
     p.add_argument(
         '--time_unit',
         help="unit of plot time (default: day)",
+    )
+    p.add_argument(
+        '--radius',
+        help="radius(-ii) at which to plot flux (default: inner boundary)",
+        type=float,
+        nargs='*',
+        metavar=('R0', 'R1'),
+    )
+    p.add_argument(
+        '--radius_unit',
+        help="unit of plot radius(-ii) (default: au)",
     )
     p.add_argument(
         '-v',
