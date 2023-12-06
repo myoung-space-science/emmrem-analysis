@@ -17,6 +17,7 @@ def main(
     runs: typing.Iterable[str]=None,
     outdir: str=None,
     verbose: bool=False,
+    **user
 ) -> None:
     """Plot flux versus energy at predefined shells."""
     paths = build_paths(indir, runs)
@@ -26,13 +27,15 @@ def main(
         ncols=npaths,
         sharex=True,
         sharey=True,
+        squeeze=False,
         figsize=(2 + 4*npaths, 4),
     )
-    for ax, path in zip(axs, paths):
-        add_panel(ax, num, config=config, source=path)
-    axs[0].legend()
+    flataxs = tuple(axs.flat)
+    for ax, path in zip(flataxs, paths):
+        add_panel(ax, num, config=config, source=path, **user)
+    flataxs[0].legend()
     fig.tight_layout()
-    plotdir = outdir or pathlib.Path.cwd()
+    plotdir = fullpath(outdir) or pathlib.Path.cwd()
     plotpath = plotdir / 'flux-energy.png'
     if verbose:
         print(f"Saved {plotpath}")
@@ -79,6 +82,7 @@ def add_panel(
     num: int=0,
     config: str=None,
     source: str=None,
+    **user
 ) -> None:
     """Add a single plot panel to the figure."""
     stream = eprem.stream(
@@ -89,7 +93,7 @@ def add_panel(
     radius = stream['radius'].withunit('au')
     energy = stream['energy'].withunit('MeV')
     flux = stream['flux'].withunit('1 / (cm^2 s sr MeV)')
-    time = 1.0, 'day'
+    time = get_time(user)
     r = float(radius[time, 0].squeezed)
     ax.plot(
         energy[:].squeezed,
@@ -112,6 +116,18 @@ def add_panel(
     ax.set_yscale('log')
     ax.set_title(str(stream.dataset.source.parent.name))
     ax.label_outer()
+
+
+def get_time(user: dict):
+    """Get an appropriate time index from user input."""
+    # NOTE: This function allows for the possibility that `user` contains `None`
+    # for 'time' or 'time_unit', and treats each case the same as if it did not
+    # contain the corresponding key at all. This is necessary since the CLI will
+    # populate `user` with explicit null values for missing parameters.
+    time = user.get('time')
+    if time is None:
+        return 0
+    return time, user.get('time_unit') or 'day'
 
 
 if __name__ == '__main__':
@@ -149,6 +165,16 @@ if __name__ == '__main__':
         '--output',
         dest='outdir',
         help="output directory (default: input directory)",
+    )
+    p.add_argument(
+        '--time',
+        help="time at which to plot flux (default: initial time step)",
+        type=float,
+        nargs=1,
+    )
+    p.add_argument(
+        '--time_unit',
+        help="unit of plot time (default: day)",
     )
     p.add_argument(
         '-v',
