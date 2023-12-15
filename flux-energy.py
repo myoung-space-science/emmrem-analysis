@@ -59,9 +59,7 @@ def build_paths(
         simulation runs.
     """
     if runs is None and indir is None:
-        raise ValueError(
-            "Not enough information to build paths"
-        ) from None
+        return (pathlib.Path.cwd(),)
     if indir is None:
         if isinstance(runs, str):
             return (fullpath(run) for run in pathlib.Path.cwd().glob(runs))
