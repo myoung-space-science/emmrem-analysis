@@ -118,8 +118,10 @@ def add_panel(
         )
     ax.set_xlabel("Energy [MeV]")
     ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV)]")
-    ax.set_xlim(1e-1, 1e1)
-    ax.set_ylim(1e-2, 1e6)
+    if xlim := user.get('xlim'):
+        ax.set_xlim(*xlim)
+    if ylim := user.get('ylim'):
+        ax.set_ylim(*ylim)
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_title(str(stream.dataset.source.parent.name))
@@ -230,6 +232,18 @@ if __name__ == '__main__':
         '--verbose',
         help="print runtime messages",
         action='store_true',
+    )
+    p.add_argument(
+        '--xlim',
+        help="set x-axis limits on the plot",
+        nargs=2,
+        type=float,
+    )
+    p.add_argument(
+        '--ylim',
+        help="set y-axis limits on the plot",
+        nargs=2,
+        type=float,
     )
     args = p.parse_args()
     main(**vars(args))
