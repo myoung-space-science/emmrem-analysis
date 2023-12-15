@@ -34,6 +34,12 @@ def main(
     for ax, path in zip(flataxs, paths):
         add_panel(ax, num, config=config, source=path, **user)
     flataxs[0].legend()
+    time = get_time(user)
+    if isinstance(time, int):
+        timestr = f"time index = {time}"
+    else:
+        timestr = f"time = {time[0]} {time[1]}"
+    fig.suptitle(timestr)
     fig.tight_layout()
     plotdir = fullpath(outdir or '.')
     plotpath = plotdir / 'flux-energy.png'
@@ -124,7 +130,8 @@ def add_panel(
         ax.set_ylim(*ylim)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_title(str(stream.dataset.source.parent.name))
+    ax.set_title(stream.dataset.source.parent.name)
+    ax
     ax.label_outer()
 
 
