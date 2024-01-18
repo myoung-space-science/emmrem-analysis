@@ -130,8 +130,7 @@ def add_panel(
         ax.set_ylim(*ylim)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_title(stream.dataset.source.parent.name)
-    ax
+    ax.set_title(stream.dataview.source.parent.name)
     ax.label_outer()
 
 
