@@ -41,7 +41,7 @@ def plot_stream(stream: eprem.Observer, **kwargs):
         nrows=1,
         ncols=3,
         squeeze=True,
-        figsize=(14, 4),
+        figsize=(50, 6),
     )
     plot_stream_flux(axs[0], stream, **kwargs)
     plot_stream_fluence(axs[1], stream, **kwargs)
@@ -75,7 +75,7 @@ def plot_stream_flux(
     ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV/nuc)]")
     ax.set_xscale('linear')
     ax.set_yscale('log')
-    ax.legend()
+    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
 
 
 def plot_stream_fluence(
@@ -122,7 +122,7 @@ def plot_stream_intflux(
     ax.set_ylabel(r"Integral Flux [1 / (cm$^2$ s sr)]")
     ax.set_xscale('linear')
     ax.set_yscale('log')
-    ax.legend()
+    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
 
 
 def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
