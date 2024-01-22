@@ -41,12 +41,12 @@ def plot_stream(stream: eprem.Observer, **kwargs):
         nrows=1,
         ncols=3,
         squeeze=True,
-        figsize=(50, 6),
+        figsize=(20, 6),
     )
     plot_stream_flux(axs[0], stream, **kwargs)
     plot_stream_fluence(axs[1], stream, **kwargs)
     plot_stream_intflux(axs[2], stream, **kwargs)
-    fig.suptitle(make_suptitle(stream, **kwargs))
+    fig.suptitle(make_suptitle(stream, **kwargs), fontsize=20)
     fig.tight_layout()
 
 
@@ -71,11 +71,11 @@ def plot_stream_flux(
             yvalmax = max(yvalmax, arraymax)
     ylogmax = int(numpy.log10(yvalmax)) + 1
     ax.set_ylim([10**(ylogmax-6), 10**ylogmax])
-    ax.set_xlabel(f"Time [{stream.times.unit}]")
-    ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV/nuc)]")
+    ax.set_xlabel(f"Time [{stream.times.unit}]", fontsize=14)
+    ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV/nuc)]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
-    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
+    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), handlelength=1.0)
 
 
 def plot_stream_fluence(
@@ -91,8 +91,8 @@ def plot_stream_fluence(
     ax.plot(energies, array)
     ylogmax = int(numpy.log10(numpy.max(array))) + 1
     ax.set_ylim([10**(ylogmax-6), 10**ylogmax])
-    ax.set_xlabel(f"Energy [{energies.unit}]")
-    ax.set_ylabel(r"Fluence [1 / (cm$^2$ sr MeV/nuc)]")
+    ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
+    ax.set_ylabel(r"Fluence [1 / (cm$^2$ sr MeV/nuc)]", fontsize=14)
     ax.set_xscale('log')
     ax.set_yscale('log')
 
@@ -118,11 +118,11 @@ def plot_stream_intflux(
             yvalmax = max(yvalmax, arraymax)
     ylogmax = int(numpy.log10(yvalmax)) + 1
     ax.set_ylim([10**(ylogmax-6), 10**ylogmax])
-    ax.set_xlabel(f"Time [{stream.times.unit}]")
-    ax.set_ylabel(r"Integral Flux [1 / (cm$^2$ s sr)]")
+    ax.set_xlabel(f"Time [{stream.times.unit}]", fontsize=14)
+    ax.set_ylabel(r"Integral Flux [1 / (cm$^2$ s sr)]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
-    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
+    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), handlelength=1.0)
 
 
 def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
