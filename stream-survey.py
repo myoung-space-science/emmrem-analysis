@@ -42,12 +42,12 @@ def plot_stream(stream: eprem.Observer, **kwargs):
         ncols=3,
         squeeze=True,
         figsize=(20, 6),
+        layout='constrained',
     )
     plot_stream_flux(axs[0], stream, **kwargs)
     plot_stream_fluence(axs[1], stream, **kwargs)
     plot_stream_intflux(axs[2], stream, **kwargs)
     fig.suptitle(make_suptitle(stream, **kwargs), fontsize=20)
-    fig.tight_layout()
 
 
 def plot_stream_flux(
