@@ -26,6 +26,7 @@ def main(
     location = get_location(user)
     species = get_species(user)
     plotdir = fullpath(outdir or source)
+    plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
         plot_stream(stream, location=location, species=species)
         plotpath = plotdir / stream.source.with_suffix('.png').name
