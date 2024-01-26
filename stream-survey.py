@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 from eprempy import eprem
-from eprempy import physical
 from eprempy import quantity
 from eprempy.paths import fullpath
 
