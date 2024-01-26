@@ -18,7 +18,7 @@ def main(
     verbose: bool=False,
     **user
 ) -> None:
-    """Create survey plots for one or more streams."""
+    """Create survey plots for one or more stream observers."""
     source = indir or '.'
     dataset = eprem.dataset(source=source, config=config)
     streams = get_streams(dataset, num)
