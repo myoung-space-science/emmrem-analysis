@@ -206,8 +206,7 @@ def plot_accel_terms(
     quantities = {
         rf'$\ln({{n/B}})${smstr}': dln_rho_b_dt,
         rf'$\ln({{B}})${smstr}': dln_b_dt,
-        rf'$\ln({{n/B}}) + \ln({{B}})${smstr}': dln_rho_b_dt + dln_b_dt,
-        # rf'$\ln({{n}})${smstr}': dln_rho_dt,
+        rf'$\ln({{n}})${smstr}': dln_rho_dt,
         rf'$-\hat{{b}}\cdot\vec{{V}}/w${smstr}': -dub_dt / v,
     }
     colors = [f'C{i}' for i in range(len(quantities))]
