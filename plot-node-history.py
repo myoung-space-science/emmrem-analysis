@@ -48,13 +48,15 @@ def main(
         sharex=True,
         figsize=(10, 10),
     )
-    plt.xlabel('Time', fontsize=16)
+    times = stream['time'].withunit('hour')
+    plt.xlabel(f'Time [{times.unit}]', fontsize=16)
     for quantity in quantities:
         ax = axd[quantity]
         if quantity.lower() == 'dqdt':
             plot_dqdt_terms(
                 ax=ax,
                 stream=stream,
+                times=times,
                 step=step,
                 shell=shell,
                 species=species,
@@ -65,6 +67,7 @@ def main(
                 ax=ax,
                 quantity=quantity,
                 stream=stream,
+                times=times,
                 step=step,
                 shell=shell,
                 species=species,
@@ -90,6 +93,7 @@ def plot_quantity_history(
     ax: Axes,
     quantity: str,
     stream: eprem.Stream,
+    times: physical.Array,
     step: int,
     shell: int,
     species: str,
@@ -104,7 +108,7 @@ def plot_quantity_history(
         species=species,
         energy=energy,
     )
-    ax.plot(stream.times.withunit('hour'), array, 'k')
+    ax.plot(times, array, 'k')
     ax.set_yscale(PLOT_KWS.get('yscale', 'linear'))
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
@@ -116,6 +120,7 @@ def plot_quantity_history(
 def plot_dqdt_terms(
     ax: Axes,
     stream: eprem.Stream,
+    times: physical.Array,
     step: int,
     shell: int,
     species: str,
@@ -126,6 +131,7 @@ def plot_dqdt_terms(
         plot_accel_terms(
             ax=ax,
             stream=stream,
+            times=times,
             step=step,
             shell=shell,
             species=species,
@@ -146,6 +152,7 @@ def plot_dqdt_terms(
 def plot_accel_terms(
     ax: Axes,
     stream: eprem.Stream,
+    times: physical.Array,
     step: int,
     shell: int,
     species: str,
@@ -164,7 +171,7 @@ def plot_accel_terms(
     s = atomic.species(species)
     e = physical.scalar(energy, unit='MeV')
     v = numpy.sqrt(2 * e.withunit('erg') / s.mass.withunit('g')) # -> cm/s
-    t = numpy.array(stream['time'].withunit('s'))
+    t = numpy.array(times.withunit('s'))
     bmag = numpy.sqrt(br**2 + btheta**2 + bphi**2)
     if filter:
         rho = smooth(rho)
@@ -186,7 +193,7 @@ def plot_accel_terms(
     colors = [f'C{i}' for i in range(len(quantities))]
     for color, (label, array) in zip(colors, quantities.items()):
         ax.plot(
-            stream.times.withunit('hour'),
+            times,
             array,
             color=color,
             label=label,
