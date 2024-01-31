@@ -43,10 +43,12 @@ def main(
     fig, axd = plt.subplot_mosaic(
         mosaic,
         sharex=True,
-        figsize=(10, 10),
+        figsize=(10, 16),
     )
     times = stream['time'].withunit('hour')
     plt.xlabel(f'Time [{times.unit}]', fontsize=16)
+    suptitle = create_suptitle(stream, step, shell, species, energy)
+    plt.suptitle(suptitle, fontsize=20)
     for quantity in quantities:
         ax = axd[quantity]
         if quantity.lower() == 'dqdt':
@@ -80,6 +82,26 @@ def main(
     plt.close()
 
 
+def create_suptitle(
+    stream: eprem.Stream,
+    step: int,
+    shell: int,
+    species: str,
+    energy: float,
+) -> str:
+    """Create the plot super title."""
+    r = stream['r'][step, shell].withunit('au')
+    theta = stream['theta'][step, shell].withunit('deg')
+    phi = stream['phi'][step, shell].withunit('deg')
+    posstr = (
+        r"$(r_0, \theta_0, \phi_0) = ($"
+        f"{float(r):.1} {r.unit}, "
+        f"{float(theta):.1f}"r"$^\circ$, "
+        f"{float(phi):.1f}"r"$^\circ)$"
+    )
+    return f"{species} | {energy} MeV\n{posstr}"
+
+
 PLOT_KWS = {
     'rho': {'yscale': 'log'},
     'flux': {'yscale': 'log'},
@@ -109,7 +131,10 @@ def plot_quantity_history(
     ax.set_yscale(PLOT_KWS.get('yscale', 'linear'))
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
-    ax.set_ylabel(f"{quantity} [{observable.unit.format('tex')}]")
+    ax.set_ylabel(
+        f"{quantity}\n[{observable.unit.format('tex')}]",
+        fontsize=16,
+    )
     ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
@@ -135,7 +160,7 @@ def plot_dqdt_terms(
             filter=filter,
             linestyle=linestyle,
         )
-    ax.set_ylabel(r'$dQ/dt$ [$s^{-1}$]', fontsize=16)
+    ax.set_ylabel(r"$dQ/dt$ ""\n"r"[$s^{-1}$]", fontsize=16)
     ax.legend(title='Q', loc='upper right', ncol=2)
     ax.set_ylim([-2e-3, +2e-3])
     ax.grid(which='major', axis='both', linewidth=2)
