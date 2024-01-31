@@ -12,6 +12,7 @@ from scipy import signal
 
 from eprempy import atomic
 from eprempy import eprem
+from eprempy import Observable
 from eprempy import paths
 from eprempy import physical
 from eprempy import universal
@@ -68,7 +69,6 @@ def main(
                 shell=shell,
                 species=species,
                 energy=energy,
-                **kwargs
             )
     savename = f'history-{step}_{shell}_{species}_{energy}MeV.png'
     savedir = paths.fullpath(outdir or '.')
@@ -96,9 +96,9 @@ def plot_quantity_history(
     energy: float,
 ) -> None:
     """Plot the node history of one or more observable quantities."""
+    observable = stream[quantity]
     array = compute_history(
-        quantity=quantity,
-        stream=stream,
+        observable=observable,
         step=step,
         shell=shell,
         species=species,
@@ -109,7 +109,8 @@ def plot_quantity_history(
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
     # ax.yaxis.set_minor_locator(tck.MultipleLocator(1))
-    ax.set_ylabel(f"{quantity}")
+    ax.set_ylabel(f"{quantity} [{observable.unit.format('tex')}]")
+    ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
 def plot_dqdt_terms(
@@ -137,9 +138,9 @@ def plot_dqdt_terms(
     ax.set_ylim([-2e-3, +2e-3])
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
-    # ax.xaxis.set_minor_locator(tck.MultipleLocator(0.25))
+    ax.xaxis.set_minor_locator(tck.MultipleLocator(0.25))
     # ax.yaxis.set_minor_locator(tck.MultipleLocator(5))
-    ax.ticklabel_format(scilimits=(0, 0))
+    ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
 def plot_accel_terms(
@@ -153,13 +154,13 @@ def plot_accel_terms(
     **kwargs
 ) -> None:
     """Compute and plot acceleration terms as functions of time."""
-    rho = compute_history('rho', stream, step, shell, species, energy)
-    br = compute_history('br', stream, step, shell, species, energy)
-    btheta = compute_history('btheta', stream, step, shell, species, energy)
-    bphi = compute_history('bphi', stream, step, shell, species, energy)
-    ur = compute_history('ur', stream, step, shell, species, energy)
-    utheta = compute_history('utheta', stream, step, shell, species, energy)
-    uphi = compute_history('uphi', stream, step, shell, species, energy)
+    rho = compute_history(stream['rho'], step, shell, species, energy)
+    br = compute_history(stream['br'], step, shell, species, energy)
+    btheta = compute_history(stream['btheta'], step, shell, species, energy)
+    bphi = compute_history(stream['bphi'], step, shell, species, energy)
+    ur = compute_history(stream['ur'], step, shell, species, energy)
+    utheta = compute_history(stream['utheta'], step, shell, species, energy)
+    uphi = compute_history(stream['uphi'], step, shell, species, energy)
     s = atomic.species(species)
     e = physical.scalar(energy, unit='MeV')
     v = numpy.sqrt(2 * e.withunit('erg') / s.mass.withunit('g')) # -> cm/s
@@ -194,22 +195,20 @@ def plot_accel_terms(
 
 
 def compute_history(
-    quantity: str,
-    stream: eprem.Stream,
+    observable: Observable,
     step: int,
     shell: int,
     species: str,
     energy: float,
 ) -> numpy.typing.NDArray:
     """Compute the history of a named quantity on a certain node."""
-    observable = stream[quantity]
     indices = [slice(None), slice(None)]
     if 'species' in observable.dimensions:
         indices.append(species)
     if 'energy' in observable.dimensions:
         indices.append((energy, 'MeV'))
     array = observable[*tuple(indices)]
-    ntimes = len(stream.times)
+    ntimes = array.shape[0]
     ts = zip(range(step, step+ntimes), range(shell, shell+ntimes))
     return numpy.squeeze([array[t-step, s-step, ...] for t, s in ts])
 
