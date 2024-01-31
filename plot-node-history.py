@@ -16,7 +16,6 @@ from eprempy import Observable
 from eprempy import paths
 from eprempy import physical
 from eprempy import universal
-from tools.graphics import parse_plot_kws
 
 ERG_MEV = 1e6 * universal.CGS['eV'].asscalar
 R_SUN = 6.96e10
@@ -30,12 +29,10 @@ def main(
     shell: int,
     species: str,
     energy: float,
-    kwargs_str: str,
     outdir: str,
     verbose: bool,
 ) -> None:
     """Plot node histories."""
-    kwargs = parse_plot_kws(kwargs_str or '')
     stream = eprem.stream(n, source=source)
     mosaic = []
     for quantity in quantities:
@@ -112,7 +109,6 @@ def plot_quantity_history(
     ax.set_yscale(PLOT_KWS.get('yscale', 'linear'))
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
-    # ax.yaxis.set_minor_locator(tck.MultipleLocator(1))
     ax.set_ylabel(f"{quantity} [{observable.unit.format('tex')}]")
     ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
@@ -145,7 +141,6 @@ def plot_dqdt_terms(
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
     ax.xaxis.set_minor_locator(tck.MultipleLocator(0.25))
-    # ax.yaxis.set_minor_locator(tck.MultipleLocator(5))
     ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
@@ -266,15 +261,6 @@ if __name__ == '__main__':
         help="the target energy (in MeV), if applicable (default: 0.0)",
         type=float,
         default=0.0,
-    )
-    p.add_argument(
-        '--plot_kws',
-        dest='kwargs_str',
-        help=(
-            "key-value pairs to pass to plotting routines"
-            "\nPass multiple comma-separated key-value pairs"
-            " as a single quoted string"
-        ),
     )
     p.add_argument(
         '-i', '--indir',
