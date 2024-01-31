@@ -189,8 +189,6 @@ def plot_accel_terms(
         ax.plot(time, array, color=color, label=label, **kwargs)
 
 
-# TODO: Consider passing in `times` and `observable` instead of `quantity` and
-# `stream`.
 def compute_history(
     quantity: str,
     stream: eprem.Stream,
@@ -207,8 +205,7 @@ def compute_history(
     if 'energy' in observable.dimensions:
         indices.append((energy, 'MeV'))
     array = observable[*tuple(indices)]
-    times = stream.times.withunit('day')
-    ntimes = len(times)
+    ntimes = len(stream.times)
     ts = zip(range(step, step+ntimes), range(shell, shell+ntimes))
     return numpy.squeeze([array[t-step, s-step, ...] for t, s in ts])
 
