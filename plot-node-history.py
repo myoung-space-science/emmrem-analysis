@@ -123,42 +123,17 @@ def plot_dqdt_terms(
     energy: float,
 ) -> None:
     """Read and plot acceleration terms at one node as functions of time."""
-    # rho = compute_history('rho', stream, step, shell, species, energy)
-    # br = compute_history('br', stream, step, shell, species, energy)
-    # btheta = compute_history('btheta', stream, step, shell, species, energy)
-    # bphi = compute_history('bphi', stream, step, shell, species, energy)
-    # ur = compute_history('ur', stream, step, shell, species, energy)
-    # utheta = compute_history('utheta', stream, step, shell, species, energy)
-    # uphi = compute_history('uphi', stream, step, shell, species, energy)
-    names = [
-        'rho',
-        'br', 'btheta', 'bphi',
-        'ur', 'utheta', 'uphi',
-    ]
-    arrays = {
-        name: compute_history(name, stream, step, shell, species, energy)
-        for name in names
-    }
-    s = atomic.species(species)
-    e = physical.scalar(energy, unit='MeV')
-    v = numpy.sqrt(2 * e.withunit('erg') / s.mass.withunit('g')) # -> cm/s
-    time = numpy.array(stream['time'])
-    plot_accel_terms(
-        ax=ax,
-        time=time,
-        v=v,
-        filter=False,
-        **arrays,
-        linestyle='dotted',
-    )
-    plot_accel_terms(
-        ax=ax,
-        time=time,
-        v=v,
-        filter=True,
-        **arrays,
-        linestyle='solid',
-    )
+    for (filter, linestyle) in zip((False, True), ('dotted', 'solid')):
+        plot_accel_terms(
+            ax=ax,
+            stream=stream,
+            step=step,
+            shell=shell,
+            species=species,
+            energy=energy,
+            filter=filter,
+            linestyle=linestyle,
+        )
     ax.set_ylabel(r'$dQ/dt$ [$s^{-1}$]', fontsize=16)
     ax.legend(title='Q', loc='upper right', ncol=2)
     ax.set_ylim([-2e-3, +2e-3])
@@ -167,6 +142,51 @@ def plot_dqdt_terms(
     # ax.xaxis.set_minor_locator(tck.MultipleLocator(0.25))
     # ax.yaxis.set_minor_locator(tck.MultipleLocator(5))
     ax.ticklabel_format(scilimits=(0, 0))
+
+
+def plot_accel_terms(
+    ax: Axes,
+    stream: eprem.Stream,
+    step: int,
+    shell: int,
+    species: str,
+    energy: float,
+    filter: bool,
+    **kwargs
+) -> None:
+    """Compute and plot acceleration terms as functions of time."""
+    rho = compute_history('rho', stream, step, shell, species, energy)
+    br = compute_history('br', stream, step, shell, species, energy)
+    btheta = compute_history('btheta', stream, step, shell, species, energy)
+    bphi = compute_history('bphi', stream, step, shell, species, energy)
+    ur = compute_history('ur', stream, step, shell, species, energy)
+    utheta = compute_history('utheta', stream, step, shell, species, energy)
+    uphi = compute_history('uphi', stream, step, shell, species, energy)
+    s = atomic.species(species)
+    e = physical.scalar(energy, unit='MeV')
+    v = numpy.sqrt(2 * e.withunit('erg') / s.mass.withunit('g')) # -> cm/s
+    time = numpy.array(stream['time'])
+    bmag = numpy.sqrt(br**2 + btheta**2 + bphi**2)
+    if filter:
+        rho = smooth(rho)
+        bmag = smooth(bmag)
+    rho_b = rho / bmag
+    dln_rho_dt = numpy.gradient(numpy.log(rho), time)
+    dln_rho_b_dt = numpy.gradient(numpy.log(rho_b), time)
+    dln_b_dt = numpy.gradient(numpy.log(bmag), time)
+    ub = (br*ur + btheta*utheta + bphi*uphi) / bmag
+    dub_dt = numpy.gradient(ub, time)
+    smstr = ' [smoothed]' if filter else ''
+    quantities = {
+        rf'$\ln({{n/B}})${smstr}': dln_rho_b_dt,
+        rf'$\ln({{B}})${smstr}': dln_b_dt,
+        rf'$\ln({{n/B}}) + \ln({{B}})${smstr}': dln_rho_b_dt + dln_b_dt,
+        # rf'$\ln({{n}})${smstr}': dln_rho_dt,
+        rf'$-\hat{{b}}\cdot\vec{{V}}/w${smstr}': -dub_dt / v,
+    }
+    colors = [f'C{i}' for i in range(len(quantities))]
+    for color, (label, array) in zip(colors, quantities.items()):
+        ax.plot(time, array, color=color, label=label, **kwargs)
 
 
 # TODO: Consider passing in `times` and `observable` instead of `quantity` and
@@ -191,44 +211,6 @@ def compute_history(
     ntimes = len(times)
     ts = zip(range(step, step+ntimes), range(shell, shell+ntimes))
     return numpy.squeeze([array[t-step, s-step, ...] for t, s in ts])
-
-
-def plot_accel_terms(
-    ax: Axes,
-    time: numpy.typing.NDArray,
-    rho: numpy.typing.NDArray,
-    ur: numpy.typing.NDArray,
-    utheta: numpy.typing.NDArray,
-    uphi: numpy.typing.NDArray,
-    br: numpy.typing.NDArray,
-    btheta: numpy.typing.NDArray,
-    bphi: numpy.typing.NDArray,
-    v: float,
-    filter: bool,
-    **kwargs
-) -> None:
-    """Compute and plot acceleration terms as functions of time."""
-    bmag = numpy.sqrt(br**2 + btheta**2 + bphi**2)
-    if filter:
-        rho = smooth(rho)
-        bmag = smooth(bmag)
-    rho_b = rho / bmag
-    dln_rho_dt = numpy.gradient(numpy.log(rho), time)
-    dln_rho_b_dt = numpy.gradient(numpy.log(rho_b), time)
-    dln_b_dt = numpy.gradient(numpy.log(bmag), time)
-    ub = (br*ur + btheta*utheta + bphi*uphi) / bmag
-    dub_dt = numpy.gradient(ub, time)
-    smstr = ' [smoothed]' if filter else ''
-    quantities = {
-        rf'$\ln({{n/B}})${smstr}': dln_rho_b_dt,
-        rf'$\ln({{B}})${smstr}': dln_b_dt,
-        rf'$\ln({{n/B}}) + \ln({{B}})${smstr}': dln_rho_b_dt + dln_b_dt,
-        # rf'$\ln({{n}})${smstr}': dln_rho_dt,
-        rf'$-\hat{{b}}\cdot\vec{{V}}/w${smstr}': -dub_dt / v,
-    }
-    colors = [f'C{i}' for i in range(len(quantities))]
-    for color, (label, array) in zip(colors, quantities.items()):
-        ax.plot(time, array, color=color, label=label, **kwargs)
 
 
 def smooth(x) -> numpy.typing.NDArray:
