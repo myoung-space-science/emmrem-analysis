@@ -96,7 +96,6 @@ def plot_quantity_history(
     energy: float,
 ) -> None:
     """Plot the node history of one or more observable quantities."""
-    time = numpy.array(stream.times)
     array = compute_history(
         quantity=quantity,
         stream=stream,
@@ -105,9 +104,8 @@ def plot_quantity_history(
         species=species,
         energy=energy,
     )
-    ax.plot(time, array, color='black', label=quantity)
+    ax.plot(stream.times.withunit('hour'), array, 'k')
     ax.set_yscale(PLOT_KWS.get('yscale', 'linear'))
-    # ax.legend(loc='lower right')
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
     # ax.yaxis.set_minor_locator(tck.MultipleLocator(1))
@@ -165,17 +163,17 @@ def plot_accel_terms(
     s = atomic.species(species)
     e = physical.scalar(energy, unit='MeV')
     v = numpy.sqrt(2 * e.withunit('erg') / s.mass.withunit('g')) # -> cm/s
-    time = numpy.array(stream['time'])
+    t = numpy.array(stream['time'].withunit('s'))
     bmag = numpy.sqrt(br**2 + btheta**2 + bphi**2)
     if filter:
         rho = smooth(rho)
         bmag = smooth(bmag)
     rho_b = rho / bmag
-    dln_rho_dt = numpy.gradient(numpy.log(rho), time)
-    dln_rho_b_dt = numpy.gradient(numpy.log(rho_b), time)
-    dln_b_dt = numpy.gradient(numpy.log(bmag), time)
+    dln_rho_dt = numpy.gradient(numpy.log(rho), t)
+    dln_rho_b_dt = numpy.gradient(numpy.log(rho_b), t)
+    dln_b_dt = numpy.gradient(numpy.log(bmag), t)
     ub = (br*ur + btheta*utheta + bphi*uphi) / bmag
-    dub_dt = numpy.gradient(ub, time)
+    dub_dt = numpy.gradient(ub, t)
     smstr = ' [smoothed]' if filter else ''
     quantities = {
         rf'$\ln({{n/B}})${smstr}': dln_rho_b_dt,
@@ -186,7 +184,13 @@ def plot_accel_terms(
     }
     colors = [f'C{i}' for i in range(len(quantities))]
     for color, (label, array) in zip(colors, quantities.items()):
-        ax.plot(time, array, color=color, label=label, **kwargs)
+        ax.plot(
+            stream.times.withunit('hour'),
+            array,
+            color=color,
+            label=label,
+            **kwargs,
+        )
 
 
 def compute_history(
