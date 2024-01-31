@@ -197,16 +197,16 @@ def plot_accel_terms(
         rho = smooth(rho)
         bmag = smooth(bmag)
     rho_b = rho / bmag
-    dln_rho_dt = numpy.gradient(numpy.log(rho), t)
-    dln_rho_b_dt = numpy.gradient(numpy.log(rho_b), t)
+    dln_n_dt = numpy.gradient(numpy.log(rho), t)
+    dln_n_b_dt = numpy.gradient(numpy.log(rho_b), t)
     dln_b_dt = numpy.gradient(numpy.log(bmag), t)
     ub = (br*ur + btheta*utheta + bphi*uphi) / bmag
     dub_dt = numpy.gradient(ub, t)
     smstr = ' [smoothed]' if filter else ''
     quantities = {
-        rf'$\ln({{n/B}})${smstr}': dln_rho_b_dt,
+        rf'$\ln({{n/B}})${smstr}': dln_n_b_dt,
         rf'$\ln({{B}})${smstr}': dln_b_dt,
-        rf'$\ln({{n}})${smstr}': dln_rho_dt,
+        rf'$\ln({{n}})${smstr}': dln_n_dt,
         rf'$-\hat{{b}}\cdot\vec{{V}}/w${smstr}': -dub_dt / v,
     }
     colors = [f'C{i}' for i in range(len(quantities))]
