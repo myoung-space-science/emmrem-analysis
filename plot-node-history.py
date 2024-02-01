@@ -4,7 +4,7 @@ import sys
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-import  matplotlib.ticker as tck
+import matplotlib.ticker as tck
 import numpy
 import numpy.typing
 from scipy import signal
@@ -47,7 +47,7 @@ def main(
     for quantity in quantities:
         ax = axd[quantity]
         if quantity.lower() == 'dqdt':
-            plot_dqdt_terms(
+            plot_dqdt_history(
                 ax=ax,
                 stream=stream,
                 times=times,
@@ -133,7 +133,7 @@ def plot_quantity_history(
     ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
-def plot_dqdt_terms(
+def plot_dqdt_history(
     ax: Axes,
     stream: eprem.Stream,
     times: physical.Array,
@@ -142,9 +142,14 @@ def plot_dqdt_terms(
     species: str,
     energy: float,
 ) -> None:
-    """Read and plot acceleration terms at one node as functions of time."""
+    """Plot terms from the FTE at one node as functions of time.
+
+    This function plots acceleration terms from the focused transport equation
+    (FTE) as functions of time. In the co-moving reference frame, FTE
+    acceleration terms all have the form dQ/dt.
+    """
     for (filter, linestyle) in zip((False, True), ('dotted', 'solid')):
-        plot_accel_terms(
+        plot_fte_dqdt(
             ax=ax,
             stream=stream,
             times=times,
@@ -164,7 +169,7 @@ def plot_dqdt_terms(
     ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
-def plot_accel_terms(
+def plot_fte_dqdt(
     ax: Axes,
     stream: eprem.Stream,
     times: physical.Array,
@@ -175,7 +180,7 @@ def plot_accel_terms(
     filter: bool,
     **kwargs
 ) -> None:
-    """Compute and plot acceleration terms as functions of time."""
+    """Compute and plot FTE acceleration terms as functions of time."""
     rho = compute_history(stream['rho'], step, shell, species, energy)
     br = compute_history(stream['br'], step, shell, species, energy)
     btheta = compute_history(stream['btheta'], step, shell, species, energy)
