@@ -3,7 +3,6 @@ import typing
 import sys
 
 import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
 from matplotlib.axes import Axes
 import  matplotlib.ticker as tck
 import numpy
@@ -15,10 +14,6 @@ from eprempy import eprem
 from eprempy import Observable
 from eprempy import paths
 from eprempy import physical
-from eprempy import universal
-
-ERG_MEV = 1e6 * universal.CGS['eV'].asscalar
-R_SUN = 6.96e10
 
 
 def main(
