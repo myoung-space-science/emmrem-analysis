@@ -30,6 +30,8 @@ def main(
     """Plot node histories."""
     stream = eprem.stream(n, source=source)
     mosaic = []
+    if not quantities:
+        raise ValueError("Nothing to plot") from None
     for quantity in quantities:
         if quantity.lower() == 'dqdt':
             mosaic.extend([[quantity]]*3)
