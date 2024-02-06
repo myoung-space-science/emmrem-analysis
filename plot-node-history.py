@@ -1,4 +1,5 @@
 import argparse
+import re
 import typing
 import sys
 
@@ -104,6 +105,8 @@ def create_suptitle(
     return f"{species} | {energy} MeV\n{posstr}"
 
 
+RE = re.compile(r"(?P<name>.*)\s*\[(?P<unit>.*)\]")
+
 PLOT_KWS = {
     'rho': {'yscale': 'log'},
     'flux': {'yscale': 'log'},
@@ -121,7 +124,7 @@ def plot_quantity_history(
     energy: float,
 ) -> None:
     """Plot the node history of one or more observable quantities."""
-    observable = stream[quantity]
+    observable, name = get_observable(quantity, stream)
     array = compute_history(
         observable=observable,
         step=step,
@@ -134,10 +137,29 @@ def plot_quantity_history(
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
     ax.set_ylabel(
-        f"{quantity}\n[{observable.unit.format('tex')}]",
+        f"{name}\n[{observable.unit.format('tex')}]",
         fontsize=16,
     )
     ax.ticklabel_format(axis='y', scilimits=(0, 0))
+
+
+def get_observable(quantity: str, stream: eprem.Stream):
+    """Create an observable quantity from `quantity`."""
+    if all(c in quantity for c in '[]'):
+        matched = RE.match(quantity)
+        if not matched:
+            raise ValueError(
+                f"Cannot determine name and unit of {quantity!r}"
+            ) from None
+        parsed = matched.groupdict()
+        name = parsed['name']
+        return stream[name].withunit(parsed['unit']), name
+    try:
+        return stream[quantity], quantity
+    except Exception as err:
+        raise ValueError(
+            f"Cannot determine observable quantity from {quantity!r}"
+        ) from err
 
 
 def plot_dqdt_history(
@@ -252,10 +274,31 @@ def smooth(x) -> numpy.typing.NDArray:
     return numpy.where(xs > 0, xs, sys.float_info.min)
 
 
+epilog = \
+"""
+Observable quantities must include a name and may also include a unit. Each
+quantity must be quoted unless it comprises only a name without whitespace.
+For example, the following are valid arguments
+
+    * mfp
+    * "mfp [au]"
+    * mean_free_path
+    * "mean free path"
+    * "mean free path [au]"
+    etc.
+
+while the following will cause an error
+
+    * mfp [au]
+    * mean free path [au]
+    etc.
+    
+"""
 if __name__ == '__main__':
     p = argparse.ArgumentParser(
         description=main.__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
+        epilog=epilog,
     )
     p.add_argument(
         'quantities',
