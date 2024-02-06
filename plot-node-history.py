@@ -67,7 +67,12 @@ def main(
                 species=species,
                 energy=energy,
             )
-    savename = f'history-{step}_{shell}_{species}_{energy}MeV.png'
+    savename = (
+        f"{stream.source.stem}-history"
+        f"-{step}_{shell}_{species}_{energy}MeV"
+        f".png"
+        # NOTE: .with_suffix('.png') may clobber part of the energy string
+    )
     savedir = paths.fullpath(outdir or '.')
     savedir.mkdir(exist_ok=True, parents=True)
     savepath = savedir / savename
