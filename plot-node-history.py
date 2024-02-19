@@ -130,14 +130,16 @@ def plot_quantity_history(
         energy=energy,
     )
     ax.plot(times, array, 'k')
-    ax.set_yscale(PLOT_KWS.get('yscale', 'linear'))
+    yscale = PLOT_KWS.get(name, {}).get('yscale', 'linear')
+    ax.set_yscale(yscale)
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
     ax.set_ylabel(
         f"{name}\n[{observable.unit.format('tex')}]",
         fontsize=16,
     )
-    ax.ticklabel_format(axis='y', scilimits=(0, 0))
+    if yscale == 'linear':
+        ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
 def get_observable(quantity: str, stream: eprem.Stream):
