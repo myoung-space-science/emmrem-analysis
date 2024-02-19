@@ -11,6 +11,7 @@ import numpy.typing
 from scipy import signal
 
 from eprempy import atomic
+from eprempy import container
 from eprempy import eprem
 from eprempy import Observable
 from eprempy import paths
@@ -33,11 +34,7 @@ def main(
     mosaic = []
     if not quantities:
         raise ValueError("Nothing to plot") from None
-    for quantity in quantities:
-        if quantity.lower() == 'dqdt':
-            mosaic.extend([[quantity]]*3)
-        else:
-            mosaic.append([quantity])
+    mosaic = [[quantity] for quantity in quantities]
     fig, axd = plt.subplot_mosaic(
         mosaic,
         sharex=True,
@@ -47,7 +44,7 @@ def main(
     plt.xlabel(f'Time [{times.unit}]', fontsize=16)
     suptitle = create_suptitle(stream, step, shell, species, energy)
     plt.suptitle(suptitle, fontsize=20)
-    for quantity in quantities:
+    for quantity in container.unique(quantities):
         ax = axd[quantity]
         if quantity.lower() == 'dqdt':
             plot_dqdt_history(
@@ -152,7 +149,7 @@ def get_observable(quantity: str, stream: eprem.Stream):
                 f"Cannot determine name and unit of {quantity!r}"
             ) from None
         parsed = matched.groupdict()
-        name = parsed['name']
+        name = parsed['name'].rstrip()
         return stream[name].withunit(parsed['unit']), name
     try:
         return stream[quantity], quantity
@@ -260,7 +257,7 @@ def compute_history(
     indices = [slice(None), slice(None)]
     if 'species' in observable.dimensions:
         indices.append(species)
-    if 'energy' in observable.dimensions:
+    if any(s in observable.dimensions for s in ('energy', 'minimum energy')):
         indices.append((energy, 'MeV'))
     array = observable[*tuple(indices)]
     ntimes = array.shape[0]
@@ -277,8 +274,8 @@ def smooth(x) -> numpy.typing.NDArray:
 epilog = \
 """
 Observable quantities must include a name and may also include a unit. Each
-quantity must be quoted unless it comprises only a name without whitespace.
-For example, the following are valid arguments
+quantity must be quoted unless it comprises only a name without whitespace. For
+example, the following are valid arguments
 
     * mfp
     * "mfp [au]"
@@ -292,7 +289,10 @@ while the following will cause an error
     * mfp [au]
     * mean free path [au]
     etc.
-    
+
+The caller may repeat a quantity to increase the vertical extent of the
+corresponding panel. Note that repeating a quantity with a different unit will
+produce a new panel.
 """
 if __name__ == '__main__':
     p = argparse.ArgumentParser(
