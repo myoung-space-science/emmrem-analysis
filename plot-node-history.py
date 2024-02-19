@@ -107,6 +107,7 @@ RE = re.compile(r"(?P<name>.*)\s*\[(?P<unit>.*)\]")
 PLOT_KWS = {
     'rho': {'yscale': 'log'},
     'flux': {'yscale': 'log'},
+    'integral flux': {'yscale': 'log'},
     'acceleration rate': {'yscale': 'log'},
 }
 
