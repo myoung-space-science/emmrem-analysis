@@ -27,6 +27,7 @@ def main(
     species: str,
     energy: float,
     outdir: str,
+    ylog: typing.Optional[typing.List[str]],
     verbose: bool,
 ) -> None:
     """Plot node histories."""
@@ -66,6 +67,7 @@ def main(
                 shell=shell,
                 species=species,
                 energy=energy,
+                ylog=ylog,
             )
     savename = (
         f"{stream.source.stem}-history"
@@ -80,6 +82,19 @@ def main(
         print(f"Saving {savepath}")
     plt.savefig(savepath)
     plt.close()
+
+
+def compute_yscales(
+    ylog: typing.Optional[typing.List],
+    quantities: typing.List[str],
+) -> typing.Dict[str, str]:
+    """Create a mapping from quantity name to y-axis scale type."""
+    if ylog == []:
+        return {quantity: 'log' for quantity in quantities}
+    yscales = {quantity: 'linear' for quantity in quantities}
+    for quantity in ylog or ():
+        yscales[quantity] = 'log'
+    return yscales
 
 
 def create_suptitle(
@@ -104,12 +119,6 @@ def create_suptitle(
 
 RE = re.compile(r"(?P<name>.*)\s*\[(?P<unit>.*)\]")
 
-PLOT_KWS = {
-    'rho': {'yscale': 'log'},
-    'flux': {'yscale': 'log'},
-    'integral flux': {'yscale': 'log'},
-    'acceleration rate': {'yscale': 'log'},
-}
 
 def plot_quantity_history(
     ax: Axes,
@@ -120,6 +129,7 @@ def plot_quantity_history(
     shell: int,
     species: str,
     energy: float,
+    ylog: typing.Optional[typing.List[str]],
 ) -> None:
     """Plot the node history of one or more observable quantities."""
     observable, name = get_observable(quantity, stream)
@@ -131,7 +141,10 @@ def plot_quantity_history(
         energy=energy,
     )
     ax.plot(times, array, 'k')
-    yscale = PLOT_KWS.get(name, {}).get('yscale', 'linear')
+    if isinstance(ylog, list) and (not ylog or name in ylog):
+        yscale = 'log'
+    else:
+        yscale = 'linear'
     ax.set_yscale(yscale)
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
@@ -338,6 +351,11 @@ if __name__ == '__main__':
         help="the target energy (in MeV), if applicable (default: 0.0)",
         type=float,
         default=0.0,
+    )
+    p.add_argument(
+        '--ylog',
+        help="log scale the y axis or all or some quantities",
+        nargs='*',
     )
     p.add_argument(
         '-i', '--indir',
