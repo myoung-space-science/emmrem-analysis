@@ -113,7 +113,7 @@ def create_suptitle(
         f"{float(theta):.1f}"r"$^\circ$, "
         f"{float(phi):.1f}"r"$^\circ)$"
     )
-    return f"{species} | {energy} MeV\n{posstr}"
+    return f"{species} @ {energy} MeV\n{posstr}"
 
 
 RE = re.compile(r"(?P<name>.*)\s*\[(?P<unit>.*)\]")
