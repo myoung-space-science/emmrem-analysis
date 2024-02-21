@@ -132,10 +132,18 @@ def plot_at_location(
     ax.label_outer()
 
 
+epilog = \
+"""
+Notes
+-----
+You must pass a constraint via one (and only one) of --step, --time, --shell, 
+or --radius.
+"""
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=main.__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
+        epilog=epilog,
     )
     parser.add_argument(
         '-n', '--stream',
@@ -160,25 +168,25 @@ if __name__ == '__main__':
     constraint = parser.add_mutually_exclusive_group(required=True)
     constraint.add_argument(
         '--step',
-        help="time step at which to plot flux",
+        help="time step at which to plot MHD quantities",
         type=int,
         nargs=1,
     )
     constraint.add_argument(
         '--time',
-        help="time at which to plot flux",
+        help="time at which to plot MHD quantities",
         nargs=2,
         metavar=('TIME', 'UNIT'),
     )
     constraint.add_argument(
         '--shell',
-        help="shell at which to plot flux",
+        help="shell at which to plot MHD quantities",
         type=int,
         nargs=1,
     )
     constraint.add_argument(
         '--radius',
-        help="radius at which to plot flux",
+        help="radius at which to plot MHD quantities",
         nargs=2,
         metavar=('RADIUS', 'UNIT'),
     )
