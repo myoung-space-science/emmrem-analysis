@@ -32,14 +32,13 @@ def main(
 ) -> None:
     """Plot node histories."""
     stream = eprem.stream(n, source=source)
-    mosaic = []
     if not quantities:
         raise ValueError("Nothing to plot") from None
     mosaic = [[quantity] for quantity in quantities]
     fig, axd = plt.subplot_mosaic(
         mosaic,
         sharex=True,
-        figsize=(10, 16),
+        figsize=(12, 3*len(quantities)),
     )
     times = stream['time'].withunit('hour')
     plt.xlabel(f'Time [{times.unit}]', fontsize=16)
@@ -203,7 +202,7 @@ def plot_dqdt_history(
             linestyle=linestyle,
         )
     ax.set_ylabel(r"$dQ/dt$ ""\n"r"[$s^{-1}$]", fontsize=16)
-    ax.legend(title='Q', loc='upper right', ncol=2)
+    ax.legend(title='Q', loc='best', ncol=2, fontsize=16)
     ax.set_ylim([-2e-3, +2e-3])
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
