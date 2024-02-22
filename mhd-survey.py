@@ -31,6 +31,7 @@ def main(
             time=time,
             location=location,
             ylog=user.get('ylog'),
+            ylims=get_ylims(user),
         )
         plotname = f"mhd-{stream.source.stem}.png"
         plotpath = plotdir / plotname
@@ -66,6 +67,15 @@ def get_location(user: dict):
         return quantity.measure(float(radius[0]), radius[1]).withunit('au')
 
 
+def get_ylims(user: dict):
+    """Get the y-axis limits from user arguments."""
+    return {
+        'B': user.get('B_ylim'),
+        'U': user.get('U_ylim'),
+        'rho': user.get('rho_ylim'),
+    }
+
+
 SUBSETS = {
     'B':   {'unit': 'nT',     'type': 'vector'},
     'U':   {'unit': 'cm / s', 'type': 'vector'},
@@ -78,6 +88,7 @@ def plot_stream(
     time: typing.Optional[typing.Union[int, quantity.Measurement]],
     location: typing.Optional[typing.Union[int, quantity.Measurement]],
     ylog: typing.Optional[typing.List[str]],
+    ylims: typing.Dict[str, typing.Optional[tuple]],
 ) -> None:
     """Create a survey plot for this stream."""
     fig, axs = plt.subplots(
@@ -103,7 +114,7 @@ def plot_stream(
         ylog = []
     for i, key in enumerate(('B', 'U', 'rho')):
         yscale = 'log' if key in ylog else 'linear'
-        f(axs[i], stream, c, yscale, key)
+        f(axs[i], key, stream, c, yscale, ylims[key])
 
 
 LABELS = {
@@ -119,49 +130,71 @@ LABELS = {
 
 def plot_at_time(
     ax: Axes,
+    key: str,
     stream: eprem.Stream,
     time: typing.Union[int, quantity.Measurement],
     yscale: str,
-    key: str,
+    ylim: tuple,
 ) -> None:
     """Plot the given quantities at the given time."""
-    radius = stream['radius'][time, :].withunit('au').squeezed
-    subset = SUBSETS[key]
-    if subset['type'] == 'vector':
-        keys = [f"{key}{c}" for c in ('r', 'theta', 'phi')]
-    else:
-        keys = [key]
-    for k in keys:
-        x = stream[k][time, :].withunit(subset['unit'])
-        array = x.squeezed
-        ax.plot(radius, array, label=LABELS[k])
-    ax.set_xlabel("Radius [au]", fontsize=14)
-    ax.set_ylabel(f"[{x.unit.format('tex')}]")
-    ax.set_yscale(yscale)
-    ax.legend()
-    ax.label_outer()
+    indices = (time, slice(None))
+    plot_quantities(
+        ax,
+        key,
+        stream['radius'][indices].withunit('au').squeezed,
+        stream,
+        indices,
+        "Radius [au]",
+        yscale,
+        ylim,
+    )
 
 
 def plot_at_location(
     ax: Axes,
+    key: str,
     stream: eprem.Stream,
     location: typing.Union[int, quantity.Measurement],
     yscale: str,
-    key: str,
+    ylim: tuple,
 ) -> None:
     """Plot the named quantities at the given location."""
+    plot_quantities(
+        ax,
+        key,
+        stream.times,
+        stream,
+        (slice(None), location),
+        f"Time [{stream.times.unit}]",
+        yscale,
+        ylim,
+    )
+
+
+def plot_quantities(
+    ax: Axes,
+    key: str,
+    x,
+    stream: eprem.Stream,
+    indices: tuple,
+    xlabel: str,
+    yscale: str,
+    ylim: tuple,
+) -> None:
+    """Common plotting logic."""
     subset = SUBSETS[key]
     if subset['type'] == 'vector':
-        keys = [f"{key}{c}" for c in ('r', 'theta', 'phi')]
+        quantities = [f"{key}{c}" for c in ('r', 'theta', 'phi')]
     else:
-        keys = [key]
-    for k in keys:
-        x = stream[k][:, location].withunit(subset['unit'])
-        array = x.squeezed
-        ax.plot(stream.times, array, label=LABELS[k])
-    ax.set_xlabel(f"Time [{stream.times.unit}]", fontsize=14)
-    ax.set_ylabel(f"[{x.unit.format('tex')}]")
+        quantities = [key]
+    for quantity in quantities:
+        y = stream[quantity][indices].withunit(subset['unit'])
+        ax.plot(x, y.squeezed, label=LABELS[quantity])
+    ax.set_xlabel(xlabel, fontsize=14)
+    ax.set_ylabel(f"[{y.unit.format('tex')}]")
     ax.set_yscale(yscale)
+    if ylim is not None:
+        ax.set_ylim(ylim)
     ax.legend()
     ax.label_outer()
 
@@ -229,6 +262,24 @@ if __name__ == '__main__':
         help="log scale the y axis of all or some quantities",
         nargs='*',
         metavar=('B, U, rho'),
+    )
+    parser.add_argument(
+        '--B-ylim',
+        help="magnetic-field y-axis limits",
+        nargs=2,
+        type=float,
+    )
+    parser.add_argument(
+        '--U-ylim',
+        help="velocity-field y-axis limits",
+        nargs=2,
+        type=float,
+    )
+    parser.add_argument(
+        '--rho-ylim',
+        help="density y-axis limits",
+        nargs=2,
+        type=float,
     )
     parser.add_argument(
         '-v', '--verbose',
