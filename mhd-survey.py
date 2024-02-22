@@ -66,6 +66,13 @@ def get_location(user: dict):
         return quantity.measure(float(radius[0]), radius[1]).withunit('au')
 
 
+SUBSETS = {
+    'B':   {'unit': 'nT',     'type': 'vector'},
+    'U':   {'unit': 'cm / s', 'type': 'vector'},
+    'rho': {'unit': 'cm^-3',  'type': 'scalar'},
+}
+
+
 def plot_stream(
     stream: eprem.Stream,
     time: typing.Optional[typing.Union[int, quantity.Measurement]],
@@ -78,11 +85,6 @@ def plot_stream(
         ncols=1,
         sharex=True,
     )
-    subsets = {
-        'B': ('Br', 'Btheta', 'Bphi'),
-        'U': ('Ur', 'Utheta', 'Uphi'),
-        'rho': ('rho',),
-    }
     # NOTE: Either time or location could be 0, so we can't rely on `if time and
     # not location` or `if location and not time`.
     if time is None and location is not None:
@@ -96,22 +98,22 @@ def plot_stream(
             f"Either time ({time}) or location ({location}) must be None"
         ) from None
     if ylog == []:
-        ylog = list(subsets)
+        ylog = list(SUBSETS)
     elif ylog is None:
         ylog = []
-    for i, (key, quantities) in enumerate(subsets.items()):
+    for i, key in enumerate(('B', 'U', 'rho')):
         yscale = 'log' if key in ylog else 'linear'
-        f(axs[i], stream, c, yscale, *quantities)
+        f(axs[i], stream, c, yscale, key)
 
 
-QUANTITIES = {
-    'Br': {'label': r'$B_r$', 'unit': 'nT'},
-    'Btheta': {'label': r'$B_\theta$', 'unit': 'nT'},
-    'Bphi': {'label': r'$B_\phi$', 'unit': 'nT'},
-    'Ur': {'label': r'$U_r$', 'unit': 'cm / s'},
-    'Utheta': {'label': r'$U_\theta$', 'unit': 'cm / s'},
-    'Uphi': {'label': r'$U_\phi$', 'unit': 'cm / s'},
-    'rho': {'label': r'$\rho$', 'unit': 'cm^-3'},
+LABELS = {
+    'Br': r'$B_r$',
+    'Btheta': r'$B_\theta$',
+    'Bphi': r'$B_\phi$',
+    'Ur': r'$U_r$',
+    'Utheta': r'$U_\theta$',
+    'Uphi': r'$U_\phi$',
+    'rho': r'$\rho$',
 }
 
 
@@ -120,15 +122,19 @@ def plot_at_time(
     stream: eprem.Stream,
     time: typing.Union[int, quantity.Measurement],
     yscale: str,
-    *keys: str,
+    key: str,
 ) -> None:
     """Plot the given quantities at the given time."""
     radius = stream['radius'][time, :].withunit('au').squeezed
-    for key in keys:
-        q = QUANTITIES[key]
-        x = stream[key][time, :].withunit(q['unit'])
+    subset = SUBSETS[key]
+    if subset['type'] == 'vector':
+        keys = [f"{key}{c}" for c in ('r', 'theta', 'phi')]
+    else:
+        keys = [key]
+    for k in keys:
+        x = stream[k][time, :].withunit(subset['unit'])
         array = x.squeezed
-        ax.plot(radius, array, label=q['label'])
+        ax.plot(radius, array, label=LABELS[k])
     ax.set_xlabel("Radius [au]", fontsize=14)
     ax.set_ylabel(f"[{x.unit.format('tex')}]")
     ax.set_yscale(yscale)
@@ -141,14 +147,18 @@ def plot_at_location(
     stream: eprem.Stream,
     location: typing.Union[int, quantity.Measurement],
     yscale: str,
-    *keys: str,
+    key: str,
 ) -> None:
     """Plot the named quantities at the given location."""
-    for key in keys:
-        q = QUANTITIES[key]
-        x = stream[key][:, location].withunit(q['unit'])
+    subset = SUBSETS[key]
+    if subset['type'] == 'vector':
+        keys = [f"{key}{c}" for c in ('r', 'theta', 'phi')]
+    else:
+        keys = [key]
+    for k in keys:
+        x = stream[k][:, location].withunit(subset['unit'])
         array = x.squeezed
-        ax.plot(stream.times, array, label=q['label'])
+        ax.plot(stream.times, array, label=LABELS[k])
     ax.set_xlabel(f"Time [{stream.times.unit}]", fontsize=14)
     ax.set_ylabel(f"[{x.unit.format('tex')}]")
     ax.set_yscale(yscale)
