@@ -353,7 +353,7 @@ if __name__ == '__main__':
     )
     p.add_argument(
         '--ylog',
-        help="log scale the y axis or all or some quantities",
+        help="log scale the y axis of all or some quantities",
         nargs='*',
     )
     p.add_argument(
