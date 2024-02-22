@@ -49,7 +49,7 @@ class Stream(PanelElement):
         self.time_step = time_step
         self._distance_unit = distance_unit
         self._marker = marker
-        self.interface = eprem.Stream(
+        self.interface = eprem.stream(
             self.name,
             source=self.datadir,
             config=config,
@@ -325,7 +325,7 @@ class Sun(PanelElement):
         return (
             1.0
             if self.distance_unit.lower() == 'rs'
-            else eprem.BASETYPES['RSAU']
+            else eprem.BASETYPES['RSAU']['value']
         )
 
     @property
@@ -778,7 +778,7 @@ def build_figpath(cli: dict):
         return pathlib.Path(found)
     datadir = pathlib.Path(cli['datadir'])
     now = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
-    return datadir / f"streams3d_{now}.html"
+    return datadir / f"streams3D_{now}.html"
 
 
 def get_panel_properties(cli: dict) -> PanelProperties:
@@ -795,7 +795,7 @@ def build_panel_title(cli: dict) -> typing.Optional[str]:
     time_stamp = get_time_stamp(cli)
     title = f"t = {time_stamp}"
     if energy := get_energy(cli):
-        title += f"    E = {energy:.2f} MeV"
+        title += f"    E = {float(energy):.2f} MeV"
     if quantity := get_observable(cli):
         name, unit = quantity
         title += rf"    {name} [{unit}]"
@@ -841,7 +841,7 @@ def get_reference_stream(cli: dict) -> eprem.Stream:
         ref_id = ids[0]
     except IndexError:
         return
-    return eprem.Stream(
+    return eprem.stream(
         ref_id,
         source=cli.get('datadir'),
         config=cli.get('confpath'),
