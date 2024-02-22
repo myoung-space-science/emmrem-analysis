@@ -26,7 +26,12 @@ def main(
     plotdir = fullpath(outdir or source)
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
-        plot_stream(stream, time=time, location=location)
+        plot_stream(
+            stream,
+            time=time,
+            location=location,
+            ylog=user.get('ylog'),
+        )
         plotname = f"mhd-{stream.source.stem}.png"
         plotpath = plotdir / plotname
         if verbose:
@@ -61,27 +66,42 @@ def get_location(user: dict):
         return quantity.measure(float(radius[0]), radius[1]).withunit('au')
 
 
-def plot_stream(stream: eprem.Stream, time, location):
+def plot_stream(
+    stream: eprem.Stream,
+    time: typing.Optional[typing.Union[int, quantity.Measurement]],
+    location: typing.Optional[typing.Union[int, quantity.Measurement]],
+    ylog: typing.Optional[typing.List[str]],
+) -> None:
     """Create a survey plot for this stream."""
     fig, axs = plt.subplots(
         nrows=3,
         ncols=1,
         sharex=True,
     )
-    # NOTE: Either time or location could be 0, so we can't simply `if time and
+    subsets = {
+        'B': ('Br', 'Btheta', 'Bphi'),
+        'U': ('Ur', 'Utheta', 'Uphi'),
+        'rho': ('rho',),
+    }
+    # NOTE: Either time or location could be 0, so we can't rely on `if time and
     # not location` or `if location and not time`.
     if time is None and location is not None:
-        plot_at_location(axs[0], stream, location, 'Br', 'Btheta', 'Bphi')
-        plot_at_location(axs[1], stream, location, 'Ur', 'Utheta', 'Uphi')
-        plot_at_location(axs[2], stream, location, 'rho')
+        f = plot_at_location
+        c = location
     elif location is None and time is not None:
-        plot_at_time(axs[0], stream, time, 'Br', 'Btheta', 'Bphi')
-        plot_at_time(axs[1], stream, time, 'Ur', 'Utheta', 'Uphi')
-        plot_at_time(axs[2], stream, time, 'rho')
+        f = plot_at_time
+        c = time
     else:
         raise ValueError(
             f"Either time ({time}) or location ({location}) must be None"
         ) from None
+    if ylog == []:
+        ylog = list(subsets)
+    elif ylog is None:
+        ylog = []
+    for i, (key, quantities) in enumerate(subsets.items()):
+        yscale = 'log' if key in ylog else 'linear'
+        f(axs[i], stream, c, yscale, *quantities)
 
 
 QUANTITIES = {
@@ -99,6 +119,7 @@ def plot_at_time(
     ax: Axes,
     stream: eprem.Stream,
     time: typing.Union[int, quantity.Measurement],
+    yscale: str,
     *keys: str,
 ) -> None:
     """Plot the given quantities at the given time."""
@@ -110,6 +131,7 @@ def plot_at_time(
         ax.plot(radius, array, label=q['label'])
     ax.set_xlabel("Radius [au]", fontsize=14)
     ax.set_ylabel(f"[{x.unit.format('tex')}]")
+    ax.set_yscale(yscale)
     ax.legend()
     ax.label_outer()
 
@@ -118,6 +140,7 @@ def plot_at_location(
     ax: Axes,
     stream: eprem.Stream,
     location: typing.Union[int, quantity.Measurement],
+    yscale: str,
     *keys: str,
 ) -> None:
     """Plot the named quantities at the given location."""
@@ -128,6 +151,7 @@ def plot_at_location(
         ax.plot(stream.times, array, label=q['label'])
     ax.set_xlabel(f"Time [{stream.times.unit}]", fontsize=14)
     ax.set_ylabel(f"[{x.unit.format('tex')}]")
+    ax.set_yscale(yscale)
     ax.legend()
     ax.label_outer()
 
@@ -189,6 +213,12 @@ if __name__ == '__main__':
         help="radius at which to plot MHD quantities",
         nargs=2,
         metavar=('RADIUS', 'UNIT'),
+    )
+    parser.add_argument(
+        '--ylog',
+        help="log scale the y axis of all or some quantities",
+        nargs='*',
+        metavar=('B, U, rho'),
     )
     parser.add_argument(
         '-v', '--verbose',
