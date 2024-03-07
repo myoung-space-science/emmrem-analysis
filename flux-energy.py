@@ -4,6 +4,7 @@ import typing
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 from eprempy import eprem
 from eprempy import quantity
@@ -30,19 +31,20 @@ def main(
         squeeze=False,
         figsize=(2 + 4*npaths, 4),
     )
-    flataxs = tuple(axs.flat)
-    for ax, path in zip(flataxs, paths):
-        add_panel(ax, num, config=config, source=path, **user)
-    flataxs[0].legend()
     time = get_time(user)
     if isinstance(time, int):
         timestr = f"time index = {time}"
     else:
         timestr = f"time = {time[0]} {time[1]}"
-    fig.suptitle(timestr)
+    flataxs = tuple(axs.flat)
+    if npaths > 1:
+        plot_multiple(fig, flataxs, num, config, paths, timestr, **user)
+    else:
+        plot_single(flataxs[0], num, config, paths[0], timestr, **user)
     fig.tight_layout()
     plotdir = fullpath(outdir or '.')
-    plotpath = plotdir / 'flux-energy.png'
+    plotdir.mkdir(exist_ok=True, parents=True)
+    plotpath = plotdir / f'stream{num}_flux-t{time[0]}h.png'
     if verbose:
         print(f"Saved {plotpath}")
     plt.savefig(plotpath)
@@ -81,36 +83,69 @@ def build_paths(
     return tuple(path / run for run in runs)
 
 
+def plot_multiple(
+    fig: Figure,
+    flataxs: typing.Tuple[Axes],
+    num: int,
+    config: typing.Optional[str],
+    paths: typing.Tuple[pathlib.Path],
+    timestr: str,
+    **user
+) -> None:
+    """Plot data from multiple runs."""
+    for ax, path in zip(flataxs, paths):
+        stream = eprem.stream(
+            num,
+            config=config,
+            source=path,
+        )
+        add_panel(ax, stream, **user)
+        ax.set_title(stream.dataview.source.parent.name)
+        ax.label_outer()
+    flataxs[0].legend()
+    fig.suptitle(f"Stream {num} ({timestr})")
+
+
+def plot_single(
+    ax: Axes,
+    num: int,
+    config: typing.Optional[str],
+    path: pathlib.Path,
+    timestr: str,
+    **user
+) -> None:
+    """Plot data from a single run."""
+    stream = eprem.stream(
+        num,
+        config=config,
+        source=path,
+    )
+    add_panel(ax, stream, **user)
+    ax.set_title(f"Stream {num} ({timestr})")
+    ax.legend()
+
+
 def add_panel(
     ax: Axes,
-    num: int=0,
-    config: str=None,
-    source: str=None,
+    stream: eprem.Stream,
     **user
 ) -> None:
     """Add a single plot panel to the figure."""
-    stream = eprem.stream(
-        num,
-        config=(config or 'eprem.cfg'),
-        source=source,
-    )
-    radius = stream['radius'].withunit('au')
     energy = stream['energy'].withunit('MeV')
     flux = stream['flux'].withunit('1 / (cm^2 s sr MeV)')
     time = get_time(user)
-    r0 = float(radius[time, 0].squeezed)
     ax.plot(
         energy[:].squeezed,
         flux[time, 0, 'H+', :].squeezed,
         'k:',
-        label=f"r = {r0:4.2f} au",
+        label="Seed spectrum",
     )
     radii = get_radius(user)
     for r in radii:
         ax.plot(
             energy[:].squeezed,
             flux[time, r, 'H+', :].squeezed,
-            label=f"r = {float(r):4.2f} au",
+            label=f"r = {float(r)} au",
         )
     ax.set_prop_cycle(None)
     shells = get_shell(user)
@@ -130,8 +165,6 @@ def add_panel(
         ax.set_ylim(*ylim)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_title(stream.dataview.source.parent.name)
-    ax.label_outer()
 
 
 # NOTE: These functions allow for the possibility that `user` contains `None`
