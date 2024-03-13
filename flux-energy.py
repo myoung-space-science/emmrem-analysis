@@ -145,7 +145,7 @@ def add_panel(
         ax.plot(
             energy[:].squeezed,
             flux[time, r, 'H+', :].squeezed,
-            label=f"r = {float(r)} au",
+            label=f"r = {float(r)} {r.unit}",
         )
     ax.set_prop_cycle(None)
     shells = get_shell(user)
@@ -204,7 +204,7 @@ def get_radius(user: dict):
     except ValueError:
         unit = radius[-1]
         values = [float(r) for r in radius[:-1]]
-        return quantity.measure(*values, unit).withunit('au')
+        return quantity.measure(*values, unit)
     return quantity.measure(radius, 'au')
 
 
