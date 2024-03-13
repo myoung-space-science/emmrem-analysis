@@ -29,6 +29,10 @@ def main(
     outdir: str,
     ylog: typing.Optional[typing.List[str]],
     verbose: bool,
+    xticksize: float,
+    xfontsize: float,
+    yticksize: float,
+    yfontsize: float,
 ) -> None:
     """Plot node histories."""
     stream = eprem.stream(n, source=source)
@@ -41,7 +45,8 @@ def main(
         figsize=(12, 3*len(quantities)),
     )
     times = stream['time'].withunit('hour')
-    plt.xlabel(f'Time [{times.unit}]', fontsize=16)
+    plt.xlabel(f'Time [{times.unit}]', fontsize=xfontsize)
+    plt.xticks(fontsize=xticksize)
     suptitle = create_suptitle(stream, step, shell, species, energy)
     plt.suptitle(suptitle, fontsize=20)
     for quantity in container.unique(quantities):
@@ -55,6 +60,8 @@ def main(
                 shell=shell,
                 species=species,
                 energy=energy,
+                yticksize=yticksize,
+                yfontsize=yfontsize,
             )
         else:
             plot_quantity_history(
@@ -67,6 +74,8 @@ def main(
                 species=species,
                 energy=energy,
                 ylog=ylog,
+                yticksize=yticksize,
+                yfontsize=yfontsize,
             )
     savename = (
         f"{stream.source.stem}-history"
@@ -129,6 +138,8 @@ def plot_quantity_history(
     species: str,
     energy: float,
     ylog: typing.Optional[typing.List[str]],
+    yticksize: float,
+    yfontsize: float,
 ) -> None:
     """Plot the node history of one or more observable quantities."""
     observable, name = get_observable(quantity, stream)
@@ -149,8 +160,9 @@ def plot_quantity_history(
     ax.grid(which='minor', axis='both', linewidth=1)
     ax.set_ylabel(
         f"{name}\n[{observable.unit.format('tex')}]",
-        fontsize=16,
+        fontsize=yfontsize,
     )
+    ax.yaxis.set_tick_params(labelsize=yticksize)
     if yscale == 'linear':
         ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
@@ -182,6 +194,8 @@ def plot_dqdt_history(
     shell: int,
     species: str,
     energy: float,
+    yticksize: float,
+    yfontsize: float,
 ) -> None:
     """Plot terms from the FTE at one node as functions of time.
 
@@ -201,12 +215,19 @@ def plot_dqdt_history(
             filter=filter,
             linestyle=linestyle,
         )
-    ax.set_ylabel(r"$dQ/dt$ ""\n"r"[$s^{-1}$]", fontsize=16)
-    ax.legend(title='Q', loc='best', ncol=2, fontsize=16)
+    ax.set_ylabel(r"$dQ/dt$ ""\n"r"[$s^{-1}$]", fontsize=yfontsize)
+    ax.legend(
+        title='Q',
+        loc='best',
+        ncol=2,
+        fontsize=16,
+        title_fontsize='xx-large',
+    )
     ax.set_ylim([-2e-3, +2e-3])
     ax.grid(which='major', axis='both', linewidth=2)
     ax.grid(which='minor', axis='both', linewidth=1)
     ax.xaxis.set_minor_locator(tck.MultipleLocator(0.25))
+    ax.yaxis.set_tick_params(labelsize=yticksize)
     ax.ticklabel_format(axis='y', scilimits=(0, 0))
 
 
@@ -364,6 +385,34 @@ if __name__ == '__main__':
     p.add_argument(
         '-o', '--outdir',
         help="the directory in which to save the plot (default: ./)",
+    )
+    p.add_argument(
+        '--x-ticksize',
+        dest='xticksize',
+        help="font size of x-axis tick marks",
+        type=float,
+        default=16,
+    )
+    p.add_argument(
+        '--x-fontsize',
+        dest='xfontsize',
+        help="font size of x-axis labels",
+        type=float,
+        default=16,
+    )
+    p.add_argument(
+        '--y-ticksize',
+        dest='yticksize',
+        help="font size of y-axis tick marks",
+        type=float,
+        default=16,
+    )
+    p.add_argument(
+        '--y-fontsize',
+        dest='yfontsize',
+        help="font size of y-axis labels",
+        type=float,
+        default=16,
     )
     p.add_argument(
         '-v', '--verbose',
