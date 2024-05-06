@@ -24,7 +24,8 @@ from support import labels
 class PanelElement(abc.ABC):
     """Abstract base class for panel elements"""
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def display_name() -> str:
         pass
 
