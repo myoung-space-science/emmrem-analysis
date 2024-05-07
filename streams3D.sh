@@ -180,7 +180,7 @@ streams=(
 active_streams=${streams[@]}
 
 axis_lim=1
-axis_units="au"
+axis_unit="au"
 
 energy=10.0
 
@@ -201,29 +201,29 @@ fi
 figpath=${plotdir}/${figname}
 
 python ${prog} \
-    --datadir ${datadir} \
-    --confpath ${confpath} \
+    --source ${datadir} \
+    --config ${confpath} \
     --streams ${streams[@]} \
-    --active_streams ${active_streams[@]} \
+    --active-streams ${active_streams[@]} \
     --mode "${mode}" \
-    --colorscale "${colorscale}" \
+    --color-scale "${colorscale}" \
     --cmin ${cmin} \
     --cmax ${cmax} \
-    --datascale "${datascale}" \
-    --time_step ${time_step} \
+    --data-scale "${datascale}" \
+    --time-step ${time_step} \
     --energy ${energy} \
-    --xaxis_range -${axis_lim} +${axis_lim} \
-    --yaxis_range -${axis_lim} +${axis_lim} \
-    --zaxis_range -${axis_lim} +${axis_lim} \
-    --axis_units "${axis_units}" \
-    --camera_eye ${camera_eye[@]} \
-    --eye_in_rtp \
-    --marker_size ${marker_size} \
+    --xaxis-range -${axis_lim} +${axis_lim} \
+    --yaxis-range -${axis_lim} +${axis_lim} \
+    --zaxis-range -${axis_lim} +${axis_lim} \
+    --axis-unit "${axis_unit}" \
+    --camera-eye ${camera_eye[@]} \
+    --eye-in-rtp \
+    --marker-size ${marker_size} \
     --resize ${resize} \
-    --resize_every ${resize_every} \
-    --resize_by ${resize_by} \
-    --resize_power ${resize_power} \
-    --sun_color "${sun_color}" \
+    --resize-every ${resize_every} \
+    --resize-by ${resize_by} \
+    --resize-power ${resize_power} \
+    --sun-color "${sun_color}" \
     --figpath "${figpath}" \
     @"${config}" \
     -v
