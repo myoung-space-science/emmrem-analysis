@@ -1121,6 +1121,11 @@ if __name__ == "__main__":
         help="metric unit in which to show data",
     )
     p.add_argument(
+        '--data-unit',
+        dest="unit",
+        help="alias for --unit",
+    )
+    p.add_argument(
         '--sun-color',
         help=( # TODO: Replace URL with something more concise
             "color of the sphere representing the Sun"
@@ -1151,19 +1156,19 @@ if __name__ == "__main__":
     p.add_argument(
         '--min',
         dest="cmin",
-        help="minimum data value",
+        help="minimum data value on color scale",
         type=float,
     )
     p.add_argument(
         '--mid',
         dest="cmid",
-        help="midpoint data value",
+        help="midpoint data value on color scale",
         type=float,
     )
     p.add_argument(
         '--max',
         dest="cmax",
-        help="maximum data value",
+        help="maximum data value on color scale",
         type=float,
     )
     p.add_argument(
