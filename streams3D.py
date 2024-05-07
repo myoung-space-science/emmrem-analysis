@@ -39,20 +39,20 @@ class Stream(PanelElement):
     def __init__(
         self,
         name: int,
-        datadir: typing.Union[str, pathlib.Path]=pathlib.Path.cwd(),
+        source: typing.Union[str, pathlib.Path]=pathlib.Path.cwd(),
         config: typing.Optional[paths.PathLike]=None,
         time_step: int=0,
         distance_unit: typing.Optional[str]=None,
         marker: typing.Optional[dict]=None,
     ) -> None:
         self.name = name
-        self.datadir =paths.fullpath(datadir)
+        self.source =paths.fullpath(source)
         self.time_step = time_step
         self._distance_unit = distance_unit
         self._marker = marker
         self.interface = eprem.stream(
             self.name,
-            source=self.datadir,
+            source=self.source,
             config=config,
         )
         self._r = None
@@ -855,7 +855,7 @@ def create_background_streams(cli: dict):
     return [
         Stream(
             i,
-            datadir=cli.get('source'),
+            source=cli.get('source'),
             config=cli.get('config'),
             time_step=cli.get('time_step'),
             distance_unit=cli.get('axis_unit'),
@@ -869,7 +869,7 @@ def create_highlighted_streams(cli: dict):
     return [
         Stream(
             i,
-            datadir=cli.get('source'),
+            source=cli.get('source'),
             config=cli.get('config'),
             time_step=cli.get('time_step'),
             distance_unit=cli.get('axis_unit'),
