@@ -3,7 +3,7 @@ import typing
 
 import numpy
 
-from eprempy import eprem
+from eprempy import Array
 
 
 class Date:
@@ -29,7 +29,7 @@ class Time:
     """A class to manage operations on simulation time."""
     def __init__(
         self,
-        reference: eprem.Stream,
+        reference: Array,
         start: str=None,
         offset: float=0.0,
     ) -> None:
@@ -62,7 +62,7 @@ class Time:
     def days(self) -> numpy.ndarray:
         """An array of floating-point days for this simulation run."""
         if self._days is None:
-            self._days = self.reference['time'][:].withunit('day').squeezed
+            self._days = self.reference.withunit('day').squeezed
         return self._days
 
     @property
