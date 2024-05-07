@@ -66,15 +66,7 @@ class Stream(PanelElement):
         distance_unit: typing.Optional[str]=None,
         marker: typing.Optional[dict]=None,
     ) -> None:
-        if len(args) == 2:
-            self.interface = eprem.stream(__id, *args)
-        elif len(args) == 1:
-            arg = args[0]
-            if isinstance(args, eprem.Stream):
-                self.interface = arg
-            raise TypeError(args)
-        else:
-            raise ValueError(args)
+        self.interface = self._get_interface(__id, args)
         self._name = __id
         self.time_step = time_step
         self._distance_unit = distance_unit
@@ -86,6 +78,17 @@ class Stream(PanelElement):
         self._y = None
         self._z = None
         self._text = None
+
+    def _get_interface(self, __id, args):
+        """Create or return a valid stream-observer interface."""
+        if len(args) == 2:
+            return eprem.stream(__id, *args)
+        if len(args) == 1:
+            arg = args[0]
+            if isinstance(arg, eprem.Stream):
+                return arg
+            raise TypeError(arg)
+        raise ValueError(args)
 
     @property
     def name(self) -> str:
@@ -790,7 +793,7 @@ def main(**cli):
     else:
         foreground_streams = create_observer_streams(cli)
     figure = Figure()
-    properties = get_panel_properties(cli)
+    properties = get_panel_properties(cli, background_streams[0].interface)
     panel = Panel(properties=properties)
     panel.add_one(sun)
     panel.add_many(background_streams)
@@ -817,33 +820,41 @@ def build_figpath(cli: dict):
     return datadir / f"streams3D_{now}.html"
 
 
-def get_panel_properties(cli: dict) -> PanelProperties:
+def get_panel_properties(
+    cli: dict,
+    reference: eprem.Stream,
+) -> PanelProperties:
     """Build a dictionary of user-specified panel properties."""
     properties = PanelProperties(**cli)
-    properties.title = build_panel_title(cli)
+    properties.title = build_panel_title(cli, reference)
     return properties
 
 
-def build_panel_title(cli: dict) -> typing.Optional[str]:
+def build_panel_title(
+    cli: dict,
+    reference: eprem.Stream,
+) -> typing.Optional[str]:
     """Build a user-specified title."""
     if cli.get('hide_title'):
         return
-    time_stamp = get_time_stamp(cli)
+    time_stamp = get_time_stamp(cli, reference)
     title = f"t = {time_stamp}"
+    name = cli.get('mode')
+    if not name:
+        return title
     if energy := get_energy(cli):
         title += f"    E = {float(energy):.2f} MeV"
-    if quantity := get_observable(cli):
-        name, unit = quantity
-        title += rf"    {name} [{unit}]"
-        if cli.get('datascale') == 'log':
-            title += " (log-scaled)"
+    unit = cli.get('unit') or reference[name].unit
+    title += rf"    {name} [{unit}]"
+    if cli.get('datascale') == 'log':
+        title += " (log-scaled)"
     return title
 
 
-def get_time_stamp(cli: dict) -> str:
+def get_time_stamp(cli: dict, reference: eprem.Stream) -> str:
     """Get the time stamp of the user-requested time step."""
     time = labels.Time(
-        get_reference_stream(cli),
+        reference['time'][:],
         start=cli.get('time_start'),
         offset=cli.get('time_offset'),
     )
@@ -859,61 +870,62 @@ def get_energy(cli: dict) -> float:
     return quantity.measure(float(energy), unit='MeV')
 
 
-def get_observable(cli: dict) -> typing.Optional[typing.Tuple[str, str]]:
-    """Get the name and unit of the observable, if available."""
-    name = cli.get('mode')
-    if not name:
-        return
-    if unit := cli.get('unit'):
-        return name, unit
-    reference = get_reference_stream(cli)
-    return name, str(reference[name].unit)
-
-
-def get_reference_stream(cli: dict) -> eprem.Stream:
-    """Get a stream to use for reference, if possible."""
-    # TODO: Refactor in terms of `create_background_streams`.
-    ids = cli.get('stream_ids', [])
-    try:
-        ref_id = ids[0]
-    except IndexError:
-        return
-    return eprem.stream(
-        ref_id,
-        source=cli.get('source'),
-        config=cli.get('config'),
-    )
-
-
 def create_background_streams(cli: dict):
     """Create a list of Stream elements for background streams."""
     source = cli.get('source')
     config = cli.get('config')
+    time_step=cli.get('time_step')
+    distance_unit=cli.get('axis_unit')
+    marker=build_marker(cli, 'background')
+    if ids := cli.get('stream_ids'):
+        return [
+            Stream(
+                i,
+                config,
+                source,
+                time_step=time_step,
+                distance_unit=distance_unit,
+                marker=marker,
+            ) for i in ids
+        ]
+    dataset = eprem.dataset(source=source, config=config)
     return [
         Stream(
             i,
-            config,
-            source,
-            time_step=cli.get('time_step'),
-            distance_unit=cli.get('axis_unit'),
-            marker=build_marker(cli, 'background'),
-        ) for i in cli.get('stream_ids', [])
+            stream,
+            time_step=time_step,
+            distance_unit=distance_unit,
+            marker=marker,
+        ) for i, stream in dataset.streams.items()
     ]
-
 
 def create_highlighted_streams(cli: dict):
     """Create a list of single-color Stream elements."""
     source = cli.get('source')
     config = cli.get('config')
+    time_step=cli.get('time_step')
+    distance_unit=cli.get('axis_unit')
+    marker=build_marker(cli, 'highlighted')
+    if ids := cli.get('active_ids'):
+        return [
+            Stream(
+                i,
+                config,
+                source,
+                time_step=time_step,
+                distance_unit=distance_unit,
+                marker=marker,
+            ) for i in ids
+        ]
+    dataset = eprem.dataset(source=source, config=config)
     return [
         Stream(
             i,
-            config,
-            source,
-            time_step=cli.get('time_step'),
-            distance_unit=cli.get('axis_unit'),
-            marker=build_marker(cli, 'highlighted')
-        ) for i in cli.get('active_ids', [])
+            stream,
+            time_step=time_step,
+            distance_unit=distance_unit,
+            marker=marker,
+        ) for i, stream in dataset.streams.items()
     ]
 
 
@@ -921,21 +933,44 @@ def create_observer_streams(cli: dict):
     """Create a list of Stream elements for active streams."""
     source = cli.get('source')
     config = cli.get('config')
+    mode=cli.get('mode')
+    time_step=cli.get('time_step', 0)
+    distance_unit=cli.get('axis_unit')
+    physics={
+        'energy': [cli.get('target_energy', 0.0), 'MeV'],
+    }
+    data_scale=cli.get('datascale', 'linear')
+    data_unit=cli.get('unit')
+    marker=build_marker(cli, 'observer')
+    ids = cli.get('active_ids') or cli.get('stream_ids')
+    if ids:
+        return [
+            ObserverStream(
+                i,
+                config,
+                source,
+                mode=mode,
+                time_step=time_step,
+                distance_unit=distance_unit,
+                physics=physics,
+                data_scale=data_scale,
+                data_unit=data_unit,
+                marker=marker,
+            ) for i in ids
+        ]
+    dataset = eprem.dataset(source=source, config=config)
     return [
         ObserverStream(
             i,
-            config,
-            source,
-            mode=cli.get('mode'),
-            time_step=cli.get('time_step', 0),
-            distance_unit=cli.get('axis_unit'),
-            physics={
-                'energy': [cli.get('target_energy', 0.0), 'MeV'],
-            },
-            data_scale=cli.get('datascale', 'linear'),
-            data_unit=cli.get('unit'),
-            marker=build_marker(cli, 'observer')
-        ) for i in cli.get('active_ids', [])
+            stream,
+            mode=mode,
+            time_step=time_step,
+            distance_unit=distance_unit,
+            physics=physics,
+            data_scale=data_scale,
+            data_unit=data_unit,
+            marker=marker,
+        ) for i, stream in dataset.streams.items()
     ]
 
 
