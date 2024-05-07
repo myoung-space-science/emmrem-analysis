@@ -36,25 +36,49 @@ class PanelElement(abc.ABC):
 
 class Stream(PanelElement):
     """A class to render simulation streams."""
+
+    @typing.overload
     def __init__(
         self,
-        name: int,
-        source: typing.Union[str, pathlib.Path]=pathlib.Path.cwd(),
+        __id: int,
         config: typing.Optional[paths.PathLike]=None,
+        source: typing.Optional[paths.PathLike]=None,
+        time_step: int=0,
+        distance_unit: typing.Optional[str]=None,
+        marker: typing.Optional[dict]=None,
+    ) -> None: ...
+
+    @typing.overload
+    def __init__(
+        self,
+        __id: int,
+        stream: eprem.Stream,
+        time_step: int=0,
+        distance_unit: typing.Optional[str]=None,
+        marker: typing.Optional[dict]=None,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        __id: int,
+        *args,
         time_step: int=0,
         distance_unit: typing.Optional[str]=None,
         marker: typing.Optional[dict]=None,
     ) -> None:
-        self.name = name
-        self.source =paths.fullpath(source)
+        if len(args) == 2:
+            self.interface = eprem.stream(__id, *args)
+        elif len(args) == 1:
+            arg = args[0]
+            if isinstance(args, eprem.Stream):
+                self.interface = arg
+            raise TypeError(args)
+        else:
+            raise ValueError(args)
+        self._name = __id
         self.time_step = time_step
         self._distance_unit = distance_unit
         self._marker = marker
-        self.interface = eprem.stream(
-            self.name,
-            source=self.source,
-            config=config,
-        )
         self._r = None
         self._theta = None
         self._phi = None
@@ -62,6 +86,16 @@ class Stream(PanelElement):
         self._y = None
         self._z = None
         self._text = None
+
+    @property
+    def name(self) -> str:
+        """The ID of this simulation stream."""
+        return self._name
+
+    @property
+    def source(self) -> eprem.Stream:
+        """The stream-observer data."""
+        return self.interface.source.parent
 
     @property
     def distance_unit(self) -> str:
@@ -838,6 +872,7 @@ def get_observable(cli: dict) -> typing.Optional[typing.Tuple[str, str]]:
 
 def get_reference_stream(cli: dict) -> eprem.Stream:
     """Get a stream to use for reference, if possible."""
+    # TODO: Refactor in terms of `create_background_streams`.
     ids = cli.get('stream_ids', [])
     try:
         ref_id = ids[0]
@@ -852,11 +887,13 @@ def get_reference_stream(cli: dict) -> eprem.Stream:
 
 def create_background_streams(cli: dict):
     """Create a list of Stream elements for background streams."""
+    source = cli.get('source')
+    config = cli.get('config')
     return [
         Stream(
             i,
-            source=cli.get('source'),
-            config=cli.get('config'),
+            config,
+            source,
             time_step=cli.get('time_step'),
             distance_unit=cli.get('axis_unit'),
             marker=build_marker(cli, 'background'),
@@ -866,11 +903,13 @@ def create_background_streams(cli: dict):
 
 def create_highlighted_streams(cli: dict):
     """Create a list of single-color Stream elements."""
+    source = cli.get('source')
+    config = cli.get('config')
     return [
         Stream(
             i,
-            source=cli.get('source'),
-            config=cli.get('config'),
+            config,
+            source,
             time_step=cli.get('time_step'),
             distance_unit=cli.get('axis_unit'),
             marker=build_marker(cli, 'highlighted')
@@ -880,11 +919,13 @@ def create_highlighted_streams(cli: dict):
 
 def create_observer_streams(cli: dict):
     """Create a list of Stream elements for active streams."""
+    source = cli.get('source')
+    config = cli.get('config')
     return [
         ObserverStream(
             i,
-            datadir=cli.get('source'),
-            config=cli.get('config'),
+            config,
+            source,
             mode=cli.get('mode'),
             time_step=cli.get('time_step', 0),
             distance_unit=cli.get('axis_unit'),
