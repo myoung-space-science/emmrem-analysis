@@ -391,7 +391,7 @@ class PanelProperties:
         self.user = user.copy()
         self._default = {
             'axis_fontsize': 14,
-            'axis_units': None,
+            'axis_unit': None,
             'hide_axes': False,
             'eye_in_rtp': None,
         }
@@ -456,7 +456,7 @@ class PanelProperties:
             showticklabels = False
         else:
             _title = (
-                f'{symbol} [{self.axis_units}]' if self.axis_units
+                f'{symbol} [{self.axis_unit}]' if self.axis_unit
                 else f'{symbol}'
             )
             showticklabels = True
@@ -744,7 +744,7 @@ def main(**cli):
     """
     sun = Sun(
         surface_color=cli.get('sun_color'),
-        distance_unit=cli.get('axis_units'),
+        distance_unit=cli.get('axis_unit'),
     )
     background_streams = create_background_streams(cli)
     mode = cli.get('mode')
@@ -777,7 +777,7 @@ def build_figpath(cli: dict):
     # - no `figpath` given
     if found := cli.get('figpath'):
         return pathlib.Path(found)
-    datadir = pathlib.Path(cli['datadir'])
+    datadir = pathlib.Path(cli['source'])
     now = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
     return datadir / f"streams3D_{now}.html"
 
@@ -844,8 +844,8 @@ def get_reference_stream(cli: dict) -> eprem.Stream:
         return
     return eprem.stream(
         ref_id,
-        source=cli.get('datadir'),
-        config=cli.get('confpath'),
+        source=cli.get('source'),
+        config=cli.get('config'),
     )
 
 
@@ -854,10 +854,10 @@ def create_background_streams(cli: dict):
     return [
         Stream(
             i,
-            datadir=cli.get('datadir'),
-            config=cli.get('confpath'),
+            datadir=cli.get('source'),
+            config=cli.get('config'),
             time_step=cli.get('time_step'),
-            distance_unit=cli.get('axis_units'),
+            distance_unit=cli.get('axis_unit'),
             marker=build_marker(cli, 'background'),
         ) for i in cli.get('stream_ids', [])
     ]
@@ -868,10 +868,10 @@ def create_highlighted_streams(cli: dict):
     return [
         Stream(
             i,
-            datadir=cli.get('datadir'),
-            config=cli.get('confpath'),
+            datadir=cli.get('source'),
+            config=cli.get('config'),
             time_step=cli.get('time_step'),
-            distance_unit=cli.get('axis_units'),
+            distance_unit=cli.get('axis_unit'),
             marker=build_marker(cli, 'highlighted')
         ) for i in cli.get('active_ids', [])
     ]
@@ -882,11 +882,11 @@ def create_observer_streams(cli: dict):
     return [
         ObserverStream(
             i,
-            datadir=cli.get('datadir'),
-            config=cli.get('confpath'),
+            datadir=cli.get('source'),
+            config=cli.get('config'),
             mode=cli.get('mode'),
             time_step=cli.get('time_step', 0),
-            distance_unit=cli.get('axis_units'),
+            distance_unit=cli.get('axis_unit'),
             physics={
                 'energy': [cli.get('target_energy', 0.0), 'MeV'],
             },
@@ -1057,13 +1057,13 @@ if __name__ == "__main__":
         ignore_missing_file=True,
     )
     p.add_argument(
-        '--datadir',
-        help="path to data files",
+        '--source',
+        help="directory containing EPREM output",
         default=pathlib.Path().cwd(),
     )
     p.add_argument(
-        '--confpath',
-        help="name of the runtime parameter file",
+        '--config',
+        help="name of the EPREM configuration file",
     )
     p.add_argument(
         '--streams',
@@ -1074,7 +1074,7 @@ if __name__ == "__main__":
         metavar=('ID0', 'ID1'),
     )
     p.add_argument(
-        '--active_streams',
+        '--active-streams',
         dest='active_ids',
         help="stream(s) on which to show data",
         nargs='*',
@@ -1093,34 +1093,35 @@ if __name__ == "__main__":
         default=0.0,
     )
     p.add_argument(
-        '--time_step',
+        '--time-step',
         help="time step at which to plot data",
         type=int,
         default=0,
     )
     p.add_argument(
-        '--time_start',
+        '--time-start',
         help="UTC start date and time for time label",
         metavar=('YYYY-mm-dd HH:MM:SS'),
     )
     p.add_argument(
-        '--time_offset',
+        '--time-offset',
         help="signed offset from 0.0 (in days) of simulation times",
         type=float,
         default=0.0,
     )
     p.add_argument(
-        '--datascale',
+        '--data-scale',
+        dest="datascale",
         help="show the physical quantity on a linear or log scale",
         choices=('linear', 'log'),
         default='linear',
     )
     p.add_argument(
         '--unit',
-        help="the unit in which to show data",
+        help="metric unit in which to show data",
     )
     p.add_argument(
-        '--sun_color',
+        '--sun-color',
         help=( # TODO: Replace URL with something more concise
             "color of the sphere representing the Sun"
             ";\nsee https://plotly.github.io/plotly.py-docs/generated/plotly.graph_objects.scatter3d.html#plotly.graph_objects.scatter3d.Marker for examples of allowed colors"
@@ -1128,75 +1129,79 @@ if __name__ == "__main__":
         default='yellow',
     )
     p.add_argument(
-        '--colorscale',
+        '--color-scale',
+        dest="colorscale",
         help=(
-            "name of a Plotly-supported colorscale"
+            "name of a Plotly-supported color scale"
             ";\nsee https://plotly.com/python/builtin-colorscales/"
         ),
         default='viridis',
     )
     p.add_argument(
-        '--no_colorbar',
+        '--no-colorbar',
         help="do not show the colorbar",
         action='store_true',
     )
     p.add_argument(
-        '--colorbar_fontsize',
+        '--colorbar-fontsize',
         help="font size of colorbar tick labels",
         type=float,
         default=14,
     )
     p.add_argument(
-        '--cmin',
-        help="colorscale minimum value",
+        '--min',
+        dest="cmin",
+        help="minimum data value",
         type=float,
     )
     p.add_argument(
-        '--cmid',
-        help="colorscale midpoint value",
+        '--mid',
+        dest="cmid",
+        help="midpoint data value",
         type=float,
     )
     p.add_argument(
-        '--cmax',
-        help="colorscale minimum value",
+        '--max',
+        dest="cmax",
+        help="maximum data value",
         type=float,
     )
     p.add_argument(
-        '--highlight_color',
-        help="highlight active streams in this color",
+        '--highlight-color',
+        help="highlight active streams in the named color",
     )
     p.add_argument(
-        '--xaxis_range',
+        '--xaxis-range',
         help=(
             "range spanned by the x axis"
-            ";\nsee also: AXIS_UNITS"
+            ";\nsee also: --axis-unit"
         ),
         nargs=2,
         type=float,
         metavar=('MIN', 'MAX'),
     )
     p.add_argument(
-        '--yaxis_range',
+        '--yaxis-range',
         help=(
             "range spanned by the y axis"
-            ";\nsee also: AXIS_UNITS"
+            ";\nsee also: --axis-unit"
         ),
         nargs=2,
         type=float,
         metavar=('MIN', 'MAX'),
     )
     p.add_argument(
-        '--zaxis_range',
+        '--zaxis-range',
         help=(
             "range spanned by the z axis"
-            ";\nsee also: AXIS_UNITS"
+            ";\nsee also: --axis-unit"
         ),
         nargs=2,
         type=float,
         metavar=('MIN', 'MAX'),
     )
     p.add_argument(
-        '--axis_units',
+        '--axis-unit',
         help=(
             "show axes in solar radii (rs/RS/Rs)"
             " or astronomical units (au/AU/Au)"
@@ -1205,24 +1210,24 @@ if __name__ == "__main__":
         default='Rs',
     )
     p.add_argument(
-        '--axis_fontsize',
+        '--axis-fontsize',
         help="font size for all axes",
         type=float,
     )
     p.add_argument(
-        '--hide_axes',
+        '--hide-axes',
         help="hide titles and tick labels on all axes",
         action='store_true',
     )
     p.add_argument(
-        '--hide_title',
+        '--hide-title',
         help="hide the panel title(s)",
         action='store_true',
     )
     p.add_argument(
-        '--camera_center',
+        '--camera-center',
         help=(
-            "the point at the center of the view"
+            "point at the center of the view"
             ";\nsee https://plotly.com/python/3d-camera-controls/"
         ),
         nargs=3,
@@ -1230,9 +1235,9 @@ if __name__ == "__main__":
         metavar=('x', 'y', 'z'),
     )
     p.add_argument(
-        '--camera_eye',
+        '--camera-eye',
         help=(
-            "the position of the camera"
+            "position of the camera"
             ";\nmay be either Cartesian or spherical coordinates"
             ";\nenter spherical angles in degrees"
             ";\nsee https://plotly.com/python/3d-camera-controls/"
@@ -1242,9 +1247,9 @@ if __name__ == "__main__":
         metavar=('x (or r)', 'y (or θ)', 'z (or φ)'),
     )
     p.add_argument(
-        '--camera_up',
+        '--camera-up',
         help=(
-            "the direction to consider 'up'"
+            "direction to consider 'up' for camera positioning"
             ";\nsee https://plotly.com/python/3d-camera-controls/"
         ),
         nargs=3,
@@ -1252,12 +1257,12 @@ if __name__ == "__main__":
         metavar=('x', 'y', 'z'),
     )
     p.add_argument(
-        '--eye_in_rtp',
-        help="the coordinates of CAMERA_EYE are in (r, θ, φ)",
+        '--eye-in-rtp',
+        help="coordinates of CAMERA_EYE are in (r, θ, φ)",
         action='store_true',
     )
     p.add_argument(
-        '--marker_size',
+        '--marker-size',
         help="size of all node markers in pixels",
         type=float,
         default=1.0,
@@ -1272,26 +1277,26 @@ if __name__ == "__main__":
         default='none',
     )
     p.add_argument(
-        '--resize_every',
+        '--resize-every',
         help=(
-            "the cadence at which to resize active markers"
+            "cadence at which to resize active markers"
             "; use with RESIZE"
         ),
         type=int,
         default=1,
     )
     p.add_argument(
-        '--resize_by',
+        '--resize-by',
         help=(
-            "the amount by which to resize markers, relative to marker_size"
+            "amount by which to resize markers, relative to marker_size"
             "; use with RESIZE"
         ),
         type=float,
         default=2.0,
     )
     p.add_argument(
-        '--resize_power',
-        help="the power-law index for radially resizing markers",
+        '--resize-power',
+        help="power-law index for radially resizing markers",
         type=float,
         default=0.0,
     )
@@ -1309,9 +1314,9 @@ if __name__ == "__main__":
         ),
     )
     p.add_argument(
-        '--write_image_kw',
+        '--write-image-kw',
         help=(
-            "keywords to pass to Plotly write_image()"
+            "keyword(s) to pass to Plotly write_image()"
             ";\nsee manual entry for plotly.io.write_image"
         ),
         nargs='*',
@@ -1323,7 +1328,7 @@ if __name__ == "__main__":
         dest='verbosity',
         help=(
             "print runtime messages"
-            ";\nspecify multiple times to increase verbosity"
+            ";\npass multiple times to increase verbosity"
         ),
         action='count',
     )
