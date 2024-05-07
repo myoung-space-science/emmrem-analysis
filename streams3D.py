@@ -450,7 +450,8 @@ class PanelProperties:
         return self._all['zaxis_kws']
 
     def _build_axis_kws(self, symbol: str) -> dict:
-        _range = self.user.get(f'{symbol}axis_range')
+        found = self.user.get(f'{symbol}axis_range') # may be None
+        _range = found or self.user.get('axis_range')
         if self.user.get('hide_axes'):
             _title = ''
             showticklabels = False
@@ -1200,6 +1201,16 @@ if __name__ == "__main__":
         help=(
             "range spanned by the z axis"
             ";\nsee also: --axis-unit"
+        ),
+        nargs=2,
+        type=float,
+        metavar=('MIN', 'MAX'),
+    )
+    p.add_argument(
+        '--axis-range',
+        help=(
+            "range spanned by the x, y, and z axes"
+            ";\nsee also: --axis-unit, --{x,y,z}axis-range"
         ),
         nargs=2,
         type=float,
