@@ -877,26 +877,18 @@ def create_background_streams(cli: dict):
     time_step=cli.get('time_step')
     distance_unit=cli.get('axis_unit')
     marker=build_marker(cli, 'background')
-    if ids := parse_stream_ids(cli.get('stream_ids')):
-        return [
-            Stream(
-                i,
-                config,
-                source,
-                time_step=time_step,
-                distance_unit=distance_unit,
-                marker=marker,
-            ) for i in ids
-        ]
     dataset = eprem.dataset(source=source, config=config)
+    nstreams = len(dataset.streams)
+    ids = parse_stream_ids(cli.get('stream_ids'), nstreams)
     return [
         Stream(
             i,
-            stream,
+            config,
+            source,
             time_step=time_step,
             distance_unit=distance_unit,
             marker=marker,
-        ) for i, stream in dataset.streams.items()
+        ) for i in ids
     ]
 
 def create_highlighted_streams(cli: dict):
@@ -906,26 +898,18 @@ def create_highlighted_streams(cli: dict):
     time_step=cli.get('time_step')
     distance_unit=cli.get('axis_unit')
     marker=build_marker(cli, 'highlighted')
-    if ids := parse_stream_ids(cli.get('active_ids')):
-        return [
-            Stream(
-                i,
-                config,
-                source,
-                time_step=time_step,
-                distance_unit=distance_unit,
-                marker=marker,
-            ) for i in ids
-        ]
     dataset = eprem.dataset(source=source, config=config)
+    nstreams = len(dataset.streams)
+    ids = parse_stream_ids(cli.get('active_ids'), nstreams)
     return [
         Stream(
             i,
-            stream,
+            config,
+            source,
             time_step=time_step,
             distance_unit=distance_unit,
             marker=marker,
-        ) for i, stream in dataset.streams.items()
+        ) for i in ids
     ]
 
 
@@ -942,27 +926,19 @@ def create_observer_streams(cli: dict):
     data_scale=cli.get('datascale', 'linear')
     data_unit=cli.get('unit')
     marker=build_marker(cli, 'observer')
-    ids = parse_stream_ids(cli.get('active_ids') or cli.get('stream_ids'))
-    if ids:
-        return [
-            ObserverStream(
-                i,
-                config,
-                source,
-                mode=mode,
-                time_step=time_step,
-                distance_unit=distance_unit,
-                physics=physics,
-                data_scale=data_scale,
-                data_unit=data_unit,
-                marker=marker,
-            ) for i in ids
-        ]
     dataset = eprem.dataset(source=source, config=config)
+    nstreams = len(dataset.streams)
+    user = cli.get('active_ids')
+    if 'streams' in (user or {}):
+        ids = parse_stream_ids(cli.get('stream_ids'), nstreams)
+        ids.extend(parse_stream_ids(list(set(user) - {'streams'}), nstreams))
+    else:
+        ids = parse_stream_ids(user, nstreams)
     return [
         ObserverStream(
             i,
-            stream,
+            config,
+            source,
             mode=mode,
             time_step=time_step,
             distance_unit=distance_unit,
@@ -970,22 +946,29 @@ def create_observer_streams(cli: dict):
             data_scale=data_scale,
             data_unit=data_unit,
             marker=marker,
-        ) for i, stream in dataset.streams.items()
+        ) for i in ids
     ]
 
 
-def parse_stream_ids(ids: typing.Union[str, typing.List[str]]):
+def parse_stream_ids(ids: typing.Optional[typing.List[str]], maxlen: int):
     """Compute a list of stream-observer IDs from input."""
     if not ids:
-        return
+        return []
     if len(ids) == 1:
         arg = ids[0]
-        if isinstance(arg, str) and ':' in arg:
-            start, rest = arg.split(':', 1)
-            if ':' in rest:
-                stop, step = rest.split(':')
-                return list(range(int(start), int(stop), int(step)))
-            return list(range(int(start), int(rest)))
+        if isinstance(arg, str):
+            if arg == 'all':
+                return list(range(maxlen))
+            if ':' in arg:
+                if arg.startswith('::'):
+                    start = 0
+                    step = int(arg.lstrip('::'))
+                    return list(range(int(start), maxlen, int(step)))
+                start, rest = arg.split(':', 1)
+                if ':' in rest:
+                    stop, step = rest.split(':')
+                    return list(range(int(start), int(stop), int(step)))
+                return list(range(int(start), int(rest)))
     return [int(i) for i in ids]
 
 
@@ -1163,6 +1146,7 @@ if __name__ == "__main__":
         help="ID(s) of stream(s) to show",
         nargs='+',
         metavar=('ID0', 'ID1'),
+        default=['all'],
     )
     p.add_argument(
         '--active-streams',
