@@ -786,13 +786,7 @@ def main(**cli):
         distance_unit=cli.get('axis_unit'),
     )
     background_streams = create_background_streams(cli)
-    mode = cli.get('mode')
-    if not mode:
-        foreground_streams = []
-    elif mode == 'highlight':
-        foreground_streams = create_highlighted_streams(cli)
-    else:
-        foreground_streams = create_observer_streams(cli)
+    foreground_streams = create_foreground_streams(cli)
     figure = Figure()
     properties = get_panel_properties(cli, background_streams[0].interface)
     panel = Panel(properties=properties)
@@ -891,6 +885,16 @@ def create_background_streams(cli: dict):
             marker=marker,
         ) for i in ids
     ]
+
+
+def create_foreground_streams(cli: dict):
+    """Create a list of highlighted or observer Stream elements."""
+    mode = cli.get('mode')
+    if not mode:
+        return []
+    if mode == 'highlight':
+        return create_highlighted_streams(cli)
+    return create_observer_streams(cli)
 
 
 def create_highlighted_streams(cli: dict):
