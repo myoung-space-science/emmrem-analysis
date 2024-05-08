@@ -877,7 +877,7 @@ def create_background_streams(cli: dict):
     time_step=cli.get('time_step')
     distance_unit=cli.get('axis_unit')
     marker=build_marker(cli, 'background')
-    if ids := cli.get('stream_ids'):
+    if ids := parse_stream_ids(cli.get('stream_ids')):
         return [
             Stream(
                 i,
@@ -906,7 +906,7 @@ def create_highlighted_streams(cli: dict):
     time_step=cli.get('time_step')
     distance_unit=cli.get('axis_unit')
     marker=build_marker(cli, 'highlighted')
-    if ids := cli.get('active_ids'):
+    if ids := parse_stream_ids(cli.get('active_ids')):
         return [
             Stream(
                 i,
@@ -942,7 +942,7 @@ def create_observer_streams(cli: dict):
     data_scale=cli.get('datascale', 'linear')
     data_unit=cli.get('unit')
     marker=build_marker(cli, 'observer')
-    ids = cli.get('active_ids') or cli.get('stream_ids')
+    ids = parse_stream_ids(cli.get('active_ids') or cli.get('stream_ids'))
     if ids:
         return [
             ObserverStream(
@@ -972,6 +972,21 @@ def create_observer_streams(cli: dict):
             marker=marker,
         ) for i, stream in dataset.streams.items()
     ]
+
+
+def parse_stream_ids(ids: typing.Union[str, typing.List[str]]):
+    """Compute a list of stream-observer IDs from input."""
+    if not ids:
+        return
+    if len(ids) == 1:
+        arg = ids[0]
+        if isinstance(arg, str) and ':' in arg:
+            start, rest = arg.split(':', 1)
+            if ':' in rest:
+                stop, step = rest.split(':')
+                return list(range(int(start), int(stop), int(step)))
+            return list(range(int(start), int(rest)))
+    return [int(i) for i in ids]
 
 
 def build_marker(cli: dict, style: str=None):
@@ -1146,16 +1161,14 @@ if __name__ == "__main__":
         '--streams',
         dest='stream_ids',
         help="ID(s) of stream(s) to show",
-        nargs='*',
-        action=interfaces.ConvertStreamIDs,
+        nargs='+',
         metavar=('ID0', 'ID1'),
     )
     p.add_argument(
         '--active-streams',
         dest='active_ids',
         help="stream(s) on which to show data",
-        nargs='*',
-        action=interfaces.ConvertStreamIDs,
+        nargs='+',
         metavar=('ID0', 'ID1'),
     )
     p.add_argument(
