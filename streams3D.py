@@ -249,13 +249,13 @@ class ObserverStream(Stream):
     def __init__(
         self,
         *args,
-        mode: str=None,
+        quantity: str=None,
         physics: dict=None,
         data_scale: str='linear',
         data_unit: str=None,
         **kwargs
     ) -> None:
-        self.mode = mode
+        self.quantity = quantity
         self._physics = physics
         self.data_scale = data_scale
         self.data_unit = data_unit
@@ -274,13 +274,13 @@ class ObserverStream(Stream):
     def values(self) -> numpy.typing.NDArray:
         """The value of the named observable, if any, at each node."""
         if self._values is None:
-            self._values = self._observed_values if self.mode else []
+            self._values = self._observed_values if self.quantity else []
         return self._values
 
     @property
     def _observed_values(self) -> numpy.typing.NDArray:
         """Values from an observerable."""
-        x = self.interface[self.mode]
+        x = self.interface[self.quantity]
         this = x.withunit(self.data_unit) if self.data_unit else x
         observed = this[self.time_step, ...]
         values = numpy.array(numpy.squeeze(observed.data), ndmin=1)
@@ -889,71 +889,58 @@ def create_background_streams(cli: dict):
 
 def create_foreground_streams(cli: dict):
     """Create a list of highlighted or observer Stream elements."""
-    mode = cli.get('mode')
-    if not mode:
-        return []
-    if mode == 'highlight':
-        return create_highlighted_streams(cli)
-    return create_observer_streams(cli)
-
-
-def create_highlighted_streams(cli: dict):
-    """Create a list of single-color Stream elements."""
     source = cli.get('source')
     config = cli.get('config')
     time_step = cli.get('time_step')
     distance_unit = cli.get('axis_unit')
-    marker = build_marker(cli, 'highlighted')
     dataset = eprem.dataset(source=source, config=config)
     nstreams = len(dataset.streams)
-    ids = parse_stream_ids(cli.get('active_ids'), nstreams)
-    return [
-        Stream(
-            i,
-            config,
+    observers = cli.get('observer_ids') or cli.get('stream_ids')
+    ids = parse_stream_ids(observers, nstreams)
+    quantity = cli.get('quantity')
+    if not quantity:
+        return create_highlighted_streams(
             source,
+            config,
+            ids,
             time_step=time_step,
             distance_unit=distance_unit,
-            marker=marker,
-        ) for i in ids
-    ]
+            marker=build_marker(cli, 'highlighted'),
+        )
+    return create_observer_streams(
+        source,
+        config,
+        ids,
+        time_step=time_step,
+        distance_unit=distance_unit,
+        quantity=quantity,
+        physics={
+            'energy': [cli.get('target_energy', 0.0), 'MeV'],
+        },
+        data_scale=cli.get('datascale', 'linear'),
+        data_unit=cli.get('unit'),
+        marker=build_marker(cli, 'observer'),
+    )
 
 
-def create_observer_streams(cli: dict):
-    """Create a list of Stream elements for active streams."""
-    source = cli.get('source')
-    config = cli.get('config')
-    mode = cli.get('mode')
-    time_step = cli.get('time_step', 0)
-    distance_unit = cli.get('axis_unit')
-    physics = {
-        'energy': [cli.get('target_energy', 0.0), 'MeV'],
-    }
-    data_scale = cli.get('datascale', 'linear')
-    data_unit = cli.get('unit')
-    marker = build_marker(cli, 'observer')
-    dataset = eprem.dataset(source=source, config=config)
-    nstreams = len(dataset.streams)
-    user = cli.get('active_ids')
-    if 'streams' in (user or {}):
-        ids = parse_stream_ids(cli.get('stream_ids'), nstreams)
-        ids.extend(parse_stream_ids(list(set(user) - {'streams'}), nstreams))
-    else:
-        ids = parse_stream_ids(user, nstreams)
-    return [
-        ObserverStream(
-            i,
-            config,
-            source,
-            mode=mode,
-            time_step=time_step,
-            distance_unit=distance_unit,
-            physics=physics,
-            data_scale=data_scale,
-            data_unit=data_unit,
-            marker=marker,
-        ) for i in ids
-    ]
+def create_highlighted_streams(
+    source,
+    config,
+    ids,
+    **kwargs
+) -> typing.List[Stream]:
+    """Create a list of single-color Stream elements."""
+    return [Stream(i, config, source, **kwargs) for i in ids]
+
+
+def create_observer_streams(
+    source,
+    config,
+    ids,
+    **kwargs
+) -> typing.List[ObserverStream]:
+    """Create a list of Stream elements for stream observers."""
+    return [ObserverStream(i, config, source, **kwargs) for i in ids]
 
 
 def parse_stream_ids(ids: typing.Optional[typing.List[str]], maxlen: int):
@@ -1023,7 +1010,7 @@ def update_background_marker(cli: dict):
 def update_highlighted_marker(cli: dict):
     """Declare the set of attributes specific to highlighted markers."""
     return {
-        'color': cli.get('highlight_color'),
+        'color': cli.get('observer_color'),
         'opacity': 1.0,
     }
 
@@ -1154,15 +1141,20 @@ if __name__ == "__main__":
         default=['all'],
     )
     p.add_argument(
-        '--active-streams',
-        dest='active_ids',
-        help="stream(s) on which to show data",
+        '--observers',
+        dest='observer_ids',
+        help="ID(s) of stream or point observers to show",
         nargs='+',
         metavar=('ID0', 'ID1'),
     )
     p.add_argument(
-        '--mode',
-        help="analysis mode to run",
+        '--quantity',
+        help="physical quantity for observers to show",
+    )
+    p.add_argument(
+        '--observer-color',
+        help="show observers in the named color if --quantity is null",
+        default='black',
     )
     p.add_argument(
         '--energy',
@@ -1249,10 +1241,6 @@ if __name__ == "__main__":
         dest="cmax",
         help="maximum data value on color scale",
         type=float,
-    )
-    p.add_argument(
-        '--highlight-color',
-        help="highlight active streams in the named color",
     )
     p.add_argument(
         '--xaxis-range',
