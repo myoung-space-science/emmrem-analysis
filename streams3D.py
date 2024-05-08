@@ -109,20 +109,11 @@ class Stream(PanelElement):
         return self._distance_unit
 
     @property
-    def radial_scale(self) -> float:
-        """The value by which to scale node radial distances."""
-        return (
-            eprem.BASETYPES['RSAU']['value']
-            if self.distance_unit.lower() == 'rs' 
-            else 1.0
-        )
-
-    @property
     def r(self) -> numpy.typing.NDArray:
         """The radial distance of each of this stream's nodes."""
         if self._r is None:
             observed = self.interface['r'][self.time_step, :]
-            r = self.radial_scale * observed.withunit(self.distance_unit)
+            r = observed.withunit(self.distance_unit)
             self._r = r.squeezed
         return self._r
 
