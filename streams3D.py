@@ -1,5 +1,6 @@
 import abc
 import argparse
+import contextlib
 import pathlib
 from collections import Counter
 import datetime
@@ -874,9 +875,9 @@ def create_background_streams(cli: dict):
     """Create a list of Stream elements for background streams."""
     source = cli.get('source')
     config = cli.get('config')
-    time_step=cli.get('time_step')
-    distance_unit=cli.get('axis_unit')
-    marker=build_marker(cli, 'background')
+    time_step = cli.get('time_step')
+    distance_unit = cli.get('axis_unit')
+    marker = build_marker(cli, 'background')
     dataset = eprem.dataset(source=source, config=config)
     nstreams = len(dataset.streams)
     ids = parse_stream_ids(cli.get('stream_ids'), nstreams)
@@ -891,13 +892,14 @@ def create_background_streams(cli: dict):
         ) for i in ids
     ]
 
+
 def create_highlighted_streams(cli: dict):
     """Create a list of single-color Stream elements."""
     source = cli.get('source')
     config = cli.get('config')
-    time_step=cli.get('time_step')
-    distance_unit=cli.get('axis_unit')
-    marker=build_marker(cli, 'highlighted')
+    time_step = cli.get('time_step')
+    distance_unit = cli.get('axis_unit')
+    marker = build_marker(cli, 'highlighted')
     dataset = eprem.dataset(source=source, config=config)
     nstreams = len(dataset.streams)
     ids = parse_stream_ids(cli.get('active_ids'), nstreams)
@@ -917,15 +919,15 @@ def create_observer_streams(cli: dict):
     """Create a list of Stream elements for active streams."""
     source = cli.get('source')
     config = cli.get('config')
-    mode=cli.get('mode')
-    time_step=cli.get('time_step', 0)
-    distance_unit=cli.get('axis_unit')
-    physics={
+    mode = cli.get('mode')
+    time_step = cli.get('time_step', 0)
+    distance_unit = cli.get('axis_unit')
+    physics = {
         'energy': [cli.get('target_energy', 0.0), 'MeV'],
     }
-    data_scale=cli.get('datascale', 'linear')
-    data_unit=cli.get('unit')
-    marker=build_marker(cli, 'observer')
+    data_scale = cli.get('datascale', 'linear')
+    data_unit = cli.get('unit')
+    marker = build_marker(cli, 'observer')
     dataset = eprem.dataset(source=source, config=config)
     nstreams = len(dataset.streams)
     user = cli.get('active_ids')
@@ -956,19 +958,18 @@ def parse_stream_ids(ids: typing.Optional[typing.List[str]], maxlen: int):
         return []
     if len(ids) == 1:
         arg = ids[0]
-        if isinstance(arg, str):
-            if arg == 'all':
-                return list(range(maxlen))
-            if ':' in arg:
-                if arg.startswith('::'):
-                    start = 0
-                    step = int(arg.lstrip('::'))
-                    return list(range(int(start), maxlen, int(step)))
-                start, rest = arg.split(':', 1)
-                if ':' in rest:
-                    stop, step = rest.split(':')
-                    return list(range(int(start), int(stop), int(step)))
-                return list(range(int(start), int(rest)))
+        if arg == 'all':
+            return list(range(maxlen))
+        if ':' in arg:
+            if arg.startswith('::'):
+                start = 0
+                step = int(arg.lstrip('::'))
+                return list(range(int(start), maxlen, int(step)))
+            start, rest = arg.split(':', 1)
+            if ':' in rest:
+                stop, step = rest.split(':')
+                return list(range(int(start), int(stop), int(step)))
+            return list(range(int(start), int(rest)))
     return [int(i) for i in ids]
 
 
