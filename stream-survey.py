@@ -202,7 +202,6 @@ if __name__ == '__main__':
         '--shell',
         help="shell at which to plot flux (default: 0)",
         type=int,
-        nargs=1,
     )
     location.add_argument(
         '--radius',
