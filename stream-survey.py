@@ -10,6 +10,15 @@ from eprempy import quantity
 from eprempy.paths import fullpath
 
 
+UNITS = {
+    'time': 'hour',
+    'energy': 'MeV',
+    'flux': '1 / (cm^2 s sr MeV/nuc)',
+    'fluence': '1 / (cm^2 sr MeV/nuc)',
+    'integral flux': '1 / (cm^2 s sr)',
+}
+
+
 def main(
     num: int=None,
     indir: str=None,
@@ -54,12 +63,13 @@ def plot_stream(stream: eprem.Observer, **user):
     )
     location = get_location(user)
     species = get_species(user)
+    units = {q: user.get(f'{q}', u) for q, u in UNITS.items()}
     ylim = user.get('flux_ylim')
-    plot_stream_flux(axs[0], stream, location, species, ylim)
+    plot_stream_flux(axs[0], stream, location, species, units, ylim)
     ylim = user.get('fluence_ylim')
-    plot_stream_fluence(axs[1], stream, location, species, ylim)
+    plot_stream_fluence(axs[1], stream, location, species, units, ylim)
     ylim = user.get('intflux_ylim')
-    plot_stream_intflux(axs[2], stream, location, species, ylim)
+    plot_stream_intflux(axs[2], stream, location, species, units, ylim)
     fig.suptitle(make_suptitle(stream, location, species), fontsize=20)
 
 
@@ -107,23 +117,25 @@ def plot_stream_flux(
     stream: eprem.Stream,
     location: typing.Union[int, quantity.Measurement],
     species: typing.Union[int, str],
+    units: typing.Dict[str, str],
     ylim: typing.Tuple[float, float],
 ) -> None:
     """Create a plot of flux versus time for this stream."""
-    flux = stream['flux'].withunit('1 / (cm^2 s sr MeV/nuc)')
-    energies = stream.energies.withunit('MeV')
+    flux = stream['flux'].withunit(units['flux'])
+    energies = stream.energies.withunit(units['energy'])
+    times = stream.times.withunit(units['time'])
     yvalmax = None
     for i, energy in enumerate(energies):
         array = flux[:, location, species, i].squeezed
         label = f"{float(energy):.3f} {energies.unit}"
-        ax.plot(stream.times, array, label=label)
+        ax.plot(times, array, label=label)
         arraymax = numpy.max(array)
         if yvalmax is None:
             yvalmax = arraymax
         else:
             yvalmax = max(yvalmax, arraymax)
     ax.set_ylim(ylim or compute_yloglim(yvalmax))
-    ax.set_xlabel(f"Time [{stream.times.unit}]", fontsize=14)
+    ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
     ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV/nuc)]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
@@ -135,11 +147,12 @@ def plot_stream_fluence(
     stream: eprem.Stream,
     location: typing.Union[int, quantity.Measurement],
     species: typing.Union[int, str],
+    units: typing.Dict[str, str],
     ylim: typing.Tuple[float, float],
 ) -> None:
     """Create a plot of fluence versus energy for this stream."""
-    fluence = stream['fluence'].withunit('1 / (cm^2 sr MeV/nuc)')
-    energies = stream.energies.withunit('MeV')
+    fluence = stream['fluence'].withunit(units['fluence'])
+    energies = stream.energies.withunit(units['energy'])
     array = fluence[-1, location, species, :].squeezed
     ax.plot(energies, array)
     ax.set_ylim(ylim or compute_yloglim(numpy.max(array)))
@@ -154,23 +167,25 @@ def plot_stream_intflux(
     stream: eprem.Stream,
     location: typing.Union[int, quantity.Measurement],
     species: typing.Union[int, str],
+    units: typing.Dict[str, str],
     ylim: typing.Tuple[float, float],
 ) -> None:
     """Create a plot of integral flux versus time for this stream."""
-    intflux = stream['integral flux'].withunit('1 / (cm^2 s sr)')
-    energies = quantity.measure(1.0, 5.0, 10.0, 50.0, 100.0, 'MeV')
+    intflux = stream['integral flux'].withunit(units['integral flux'])
+    energies = quantity.measure(1.0, 5.0, 10.0, 50.0, 100.0, units['energy'])
+    times = stream.times.withunit(units['time'])
     yvalmax = None
     for energy in energies:
         array = intflux[:, location, species, energy].squeezed
         label = f"{float(energy)} {energies.unit}"
-        ax.plot(stream.times, array, label=label)
+        ax.plot(times, array, label=label)
         arraymax = numpy.max(array)
         if yvalmax is None:
             yvalmax = arraymax
         else:
             yvalmax = max(yvalmax, arraymax)
     ax.set_ylim(ylim or compute_yloglim(yvalmax))
-    ax.set_xlabel(f"Time [{stream.times.unit}]", fontsize=14)
+    ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
     ax.set_ylabel(r"Integral Flux [1 / (cm$^2$ s sr)]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
@@ -226,6 +241,14 @@ if __name__ == '__main__':
             "ion species to plot"
             "; may be symbol or index (default: 0)"
         ),
+    )
+    parser.add_argument(
+        '--time-unit',
+        help="metric unit in which to display times",
+    )
+    parser.add_argument(
+        '--energy-unit',
+        help="metric unit in which to display energies",
     )
     parser.add_argument(
         '--flux-ylim',
