@@ -30,6 +30,8 @@ def main(
         if verbose:
             print(f"Saved {plotpath}")
         plt.savefig(plotpath)
+        if user.get('show'):
+            plt.show()
         plt.close()
 
 
@@ -249,6 +251,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '-v', '--verbose',
         help="print runtime messages",
+        action='store_true',
+    )
+    parser.add_argument(
+        '--show',
+        help="display the plot on the screen",
         action='store_true',
     )
     args = parser.parse_args()
