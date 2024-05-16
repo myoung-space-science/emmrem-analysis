@@ -33,6 +33,14 @@ def main(
         plt.close()
 
 
+def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
+    """Get all relevant stream observers."""
+    streams = dataset.streams
+    if isinstance(num, int):
+        return [streams[num]]
+    return list(streams.values())
+
+
 def plot_stream(stream: eprem.Observer, **user):
     """Create a survey plot for this stream."""
     fig, axs = plt.subplots(
@@ -51,6 +59,45 @@ def plot_stream(stream: eprem.Observer, **user):
     ylim = user.get('intflux_ylim')
     plot_stream_intflux(axs[2], stream, location, species, ylim)
     fig.suptitle(make_suptitle(stream, location, species), fontsize=20)
+
+
+def get_location(user: dict):
+    """Get the shell or radius at which to plot."""
+    shell = user.get('shell')
+    if shell is not None: # allow value to be 0
+        return shell
+    if radius := user.get('radius'):
+        return quantity.measure(float(radius[0]), radius[1]).withunit('au')
+    return 0
+
+
+def get_species(user: dict):
+    """Get the ion species to plot."""
+    species = user.get('species')
+    if species is not None: # allow value to be 0
+        return species
+    return 0
+
+
+def make_suptitle(
+    stream: eprem.Stream,
+    location: typing.Union[int, quantity.Measurement],
+    species: typing.Union[int, str],
+) -> str:
+    """Create the top-level plot title."""
+    if isinstance(location, quantity.Measurement):
+        strloc = f"radius = {float(location)} {location.unit}"
+    elif isinstance(location, int):
+        strloc = f"shell = {location}"
+    else:
+        raise TypeError(location)
+    if isinstance(species, int):
+        strspe = f"species = {stream.species.data[species]}"
+    elif isinstance(species, str):
+        strspe = f"species = {species}"
+    else:
+        raise TypeError(species)
+    return f"{strloc} | {strspe}"
 
 
 def plot_stream_flux(
@@ -132,53 +179,6 @@ def compute_yloglim(maxval):
     """Compute logarithmic y-axis limits based on `maxval`."""
     ylogmax = int(numpy.log10(maxval)) + 1
     return 10**(ylogmax-6), 10**ylogmax
-
-
-def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
-    """Get all relevant stream observers."""
-    streams = dataset.streams
-    if isinstance(num, int):
-        return [streams[num]]
-    return list(streams.values())
-
-
-def make_suptitle(
-    stream: eprem.Stream,
-    location: typing.Union[int, quantity.Measurement],
-    species: typing.Union[int, str],
-) -> str:
-    """Create the top-level plot title."""
-    if isinstance(location, quantity.Measurement):
-        strloc = f"radius = {float(location)} {location.unit}"
-    elif isinstance(location, int):
-        strloc = f"shell = {location}"
-    else:
-        raise TypeError(location)
-    if isinstance(species, int):
-        strspe = f"species = {stream.species.data[species]}"
-    elif isinstance(species, str):
-        strspe = f"species = {species}"
-    else:
-        raise TypeError(species)
-    return f"{strloc} | {strspe}"
-
-
-def get_location(user: dict):
-    """Get the shell or radius at which to plot."""
-    shell = user.get('shell')
-    if shell is not None: # allow value to be 0
-        return shell
-    if radius := user.get('radius'):
-        return quantity.measure(float(radius[0]), radius[1]).withunit('au')
-    return 0
-
-
-def get_species(user: dict):
-    """Get the ion species to plot."""
-    species = user.get('species')
-    if species is not None: # allow value to be 0
-        return species
-    return 0
 
 
 if __name__ == '__main__':
