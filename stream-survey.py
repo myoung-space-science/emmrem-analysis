@@ -2,6 +2,7 @@ import argparse
 import typing
 
 import numpy
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
@@ -124,11 +125,13 @@ def plot_stream_flux(
     flux = stream['flux'].withunit(units['flux'])
     energies = stream.energies.withunit(units['energy'])
     times = stream.times.withunit(units['time'])
+    cmap = mpl.colormaps['jet']
+    colors = cmap(numpy.linspace(0, 1, len(energies)))
     yvalmax = None
     for i, energy in enumerate(energies):
         array = flux[:, location, species, i].squeezed
         label = f"{float(energy):.3f} {energies.unit}"
-        ax.plot(times, array, label=label)
+        ax.plot(times, array, label=label, color=colors[i])
         arraymax = numpy.max(array)
         if yvalmax is None:
             yvalmax = arraymax
