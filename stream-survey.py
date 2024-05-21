@@ -70,28 +70,7 @@ def plot_stream(stream: eprem.Observer, **user):
     plots.fluence(axs[1], stream, location, species, units, ylim)
     ylim = user.get('intflux_ylim')
     plots.intflux(axs[2], stream, location, species, units, ylim)
-    fig.suptitle(make_suptitle(stream, location, species), fontsize=20)
-
-
-def make_suptitle(
-    stream: eprem.Stream,
-    location: typing.Union[int, quantity.Measurement],
-    species: typing.Union[int, str],
-) -> str:
-    """Create the top-level plot title."""
-    if isinstance(location, quantity.Measurement):
-        strloc = f"radius = {float(location)} {location.unit}"
-    elif isinstance(location, int):
-        strloc = f"shell = {location}"
-    else:
-        raise TypeError(location)
-    if isinstance(species, int):
-        strspe = f"species = {stream.species.data[species]}"
-    elif isinstance(species, str):
-        strspe = f"species = {species}"
-    else:
-        raise TypeError(species)
-    return f"{strloc} | {strspe}"
+    fig.suptitle(plots.make_suptitle(stream, location, species), fontsize=20)
 
 
 if __name__ == '__main__':
