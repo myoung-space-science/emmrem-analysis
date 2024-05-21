@@ -7,6 +7,7 @@ from eprempy import eprem
 from eprempy import quantity
 from eprempy.paths import fullpath
 from support import plots
+from support import observers
 
 
 UNITS = {
@@ -60,8 +61,8 @@ def plot_stream(stream: eprem.Observer, **user):
         figsize=(20, 6),
         layout='constrained',
     )
-    location = get_location(user)
-    species = get_species(user)
+    location = observers.get_location(user)
+    species = observers.get_species(user)
     units = {q: user.get(f'{q}', u) for q, u in UNITS.items()}
     ylim = user.get('flux_ylim')
     plots.flux(axs[0], stream, location, species, units, ylim)
@@ -70,24 +71,6 @@ def plot_stream(stream: eprem.Observer, **user):
     ylim = user.get('intflux_ylim')
     plots.intflux(axs[2], stream, location, species, units, ylim)
     fig.suptitle(make_suptitle(stream, location, species), fontsize=20)
-
-
-def get_location(user: dict):
-    """Get the shell or radius at which to plot."""
-    shell = user.get('shell')
-    if shell is not None: # allow value to be 0
-        return shell
-    if radius := user.get('radius'):
-        return quantity.measure(float(radius[0]), radius[1]).withunit('au')
-    return 0
-
-
-def get_species(user: dict):
-    """Get the ion species to plot."""
-    species = user.get('species')
-    if species is not None: # allow value to be 0
-        return species
-    return 0
 
 
 def make_suptitle(
