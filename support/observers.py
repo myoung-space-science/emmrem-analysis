@@ -17,6 +17,31 @@ def get_streams(
     return list(streams.values())
 
 
+def get_times(user: dict):
+    """Get appropriate times or steps from user input."""
+    return compute_indexer(user.get('time'))
+
+
+def get_locations(user: dict):
+    """Get appropriate radii or shells from user input."""
+    return compute_indexer(user.get('location'))
+
+
+def compute_indexer(args: typing.Union[typing.Sequence, None]):
+    """Get appropriate indices or values from user input."""
+    if args is None:
+        return (0,)
+    if len(args) == 1:
+        return (int(args[0]),)
+    try:
+        indices = [int(arg) for arg in args]
+    except ValueError:
+        unit = args[-1]
+        values = [float(arg) for arg in args[:-1]]
+        return quantity.measure(*values, unit)
+    return tuple(indices)
+
+
 def get_location(user: dict):
     """Get the shell or radius at which to plot."""
     shell = user.get('shell')
