@@ -45,18 +45,24 @@ def plot_stream(stream: eprem.Observer, **user):
     species = observers.get_species(user)
     units = {q: user.get(f'{q}', u) for q, u in observers.UNITS.items()}
     ylim = user.get('flux_ylim')
-    plots.flux(axs[0], stream, location, species, units, ylim)
+    plots.flux(stream, location, species, units, ylim, axes=axs[0])
     ylim = user.get('fluence_ylim')
-    plots.fluence(axs[1], stream, location, species, units, ylim)
+    plots.fluence(stream, location, species, units, ylim, axes=axs[1])
     ylim = user.get('intflux_ylim')
-    plots.intflux(axs[2], stream, location, species, units, ylim)
+    plots.intflux(stream, location, species, units, ylim, axes=axs[2])
     fig.suptitle(plots.make_suptitle(stream, location, species), fontsize=20)
 
 
+epilog = """
+The argument to --location may be one or more values followed by an optional
+metric unit. If the unit is present, this routine will interpret the values as
+radii. Otherwise, it will interpret the values as shell indices.
+"""
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=main.__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
+        epilog=epilog,
     )
     parser.add_argument(
         '-n', '--stream',
@@ -78,17 +84,10 @@ if __name__ == '__main__':
         dest='outdir',
         help="output directory (default: input directory)",
     )
-    location = parser.add_mutually_exclusive_group()
-    location.add_argument(
-        '--shell',
-        help="shell at which to plot flux (default: 0)",
-        type=int,
-    )
-    location.add_argument(
-        '--radius',
-        help="radius at which to plot flux (default: inner boundary)",
-        nargs=2,
-        metavar=('RADIUS', 'UNIT'),
+    parser.add_argument(
+        '--location',
+        help="location(s) at which to plot flux (default: 0)",
+        nargs='*',
     )
     parser.add_argument(
         '--species',
