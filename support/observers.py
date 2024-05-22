@@ -19,3 +19,12 @@ def get_species(user: dict):
     return 0
 
 
+UNITS = {
+    'time': 'hour',
+    'energy': 'MeV',
+    'flux': '1 / (cm^2 s sr MeV/nuc)',
+    'fluence': '1 / (cm^2 sr MeV/nuc)',
+    'integral flux': '1 / (cm^2 s sr)',
+}
+"""Default units for observable quantities."""
+
