@@ -1,4 +1,15 @@
+import typing
+
+from eprempy import eprem
 from eprempy import quantity
+
+
+def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
+    """Get all relevant stream observers."""
+    streams = dataset.streams
+    if isinstance(num, int):
+        return [streams[num]]
+    return list(streams.values())
 
 
 def get_location(user: dict):
