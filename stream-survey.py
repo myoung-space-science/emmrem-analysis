@@ -1,5 +1,4 @@
 import argparse
-import typing
 
 import matplotlib.pyplot as plt
 
@@ -20,7 +19,7 @@ def main(
     """Create survey plots for one or more stream observers."""
     source = indir or '.'
     dataset = eprem.dataset(source=source, config=config)
-    streams = get_streams(dataset, num)
+    streams = observers.get_streams(dataset, num)
     plotdir = fullpath(outdir or source)
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
@@ -32,14 +31,6 @@ def main(
         if user.get('show'):
             plt.show()
         plt.close()
-
-
-def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
-    """Get all relevant stream observers."""
-    streams = dataset.streams
-    if isinstance(num, int):
-        return [streams[num]]
-    return list(streams.values())
 
 
 def plot_stream(stream: eprem.Observer, **user):
