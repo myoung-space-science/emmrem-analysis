@@ -34,23 +34,41 @@ def main(
 
 def plot_stream(stream: eprem.Observer, user: dict):
     """Create a survey plot for this stream."""
+    panels = user.get('quantities') or ()
+    npanels = len(panels)
+    if npanels == 0:
+        return
+    width = sum(v['width'] for k, v in PANELS.items() if k in panels)
     fig, axs = plt.subplots(
         nrows=1,
-        ncols=3,
+        ncols=len(panels),
         squeeze=True,
-        figsize=(20, 6),
+        figsize=(width, 6),
         layout='constrained',
     )
     location = observers.get_location(user)
     species = observers.get_species(user)
     units = observers.get_units(user)
-    ylim = user.get('flux_ylim')
-    plots.flux(stream, location, species, units, ylim, axes=axs[0])
-    ylim = user.get('fluence_ylim')
-    plots.fluence(stream, location, species, units, ylim, axes=axs[1])
-    ylim = user.get('intflux_ylim')
-    plots.intflux(stream, location, species, units, ylim, axes=axs[2])
+    for ax, k in zip((axs if npanels > 1 else [axs]), panels):
+        ylim = user.get(f'{k}_ylim')
+        PANELS[k]['plotter'](stream, location, species, units, ylim, axes=ax)
     fig.suptitle(plots.make_suptitle(stream, location, species), fontsize=20)
+
+
+PANELS = {
+    'flux': {
+        'width': 10,
+        'plotter': plots.flux,
+    },
+    'fluence': {
+        'width': 5,
+        'plotter': plots.fluence,
+    },
+    'intflux': {
+        'width': 5,
+        'plotter': plots.intflux,
+    },
+}
 
 
 epilog = """
@@ -63,6 +81,12 @@ if __name__ == '__main__':
         description=main.__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=epilog,
+    )
+    parser.add_argument(
+        'quantities',
+        help="physical quantities to plot in the given order",
+        nargs='+',
+        choices={'flux', 'fluence', 'intflux'},
     )
     parser.add_argument(
         '-n', '--stream',
@@ -106,21 +130,21 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--flux-ylim',
-        help="y-axis limits for flux",
+        help="y-axis limits for flux, if applicable",
         nargs=2,
         type=float,
         metavar=('LO', 'HI'),
     )
     parser.add_argument(
         '--fluence-ylim',
-        help="y-axis limits for fluence",
+        help="y-axis limits for fluence, if applicable",
         nargs=2,
         type=float,
         metavar=('LO', 'HI'),
     )
     parser.add_argument(
         '--intflux-ylim',
-        help="y-axis limits for integral flux",
+        help="y-axis limits for integral flux, if applicable",
         nargs=2,
         type=float,
         metavar=('LO', 'HI'),
