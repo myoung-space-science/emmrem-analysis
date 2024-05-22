@@ -22,6 +22,12 @@ def get_times(user: dict):
     return compute_indexer(user.get('time'))
 
 
+def get_location(user: dict):
+    """Get the shell or radius at which to plot."""
+    locations = get_locations(user)
+    return locations[0]
+
+
 def get_locations(user: dict):
     """Get appropriate radii or shells from user input."""
     return compute_indexer(user.get('location'))
@@ -42,22 +48,17 @@ def compute_indexer(args: typing.Union[typing.Sequence, None]):
     return tuple(indices)
 
 
-def get_location(user: dict):
-    """Get the shell or radius at which to plot."""
-    shell = user.get('shell')
-    if shell is not None: # allow value to be 0
-        return shell
-    if radius := user.get('radius'):
-        return quantity.measure(float(radius[0]), radius[1]).withunit('au')
-    return 0
-
-
 def get_species(user: dict):
     """Get the ion species to plot."""
     species = user.get('species')
     if species is not None: # allow value to be 0
         return species
     return 0
+
+
+def get_units(user: dict):
+    """Get appropriate metric units."""
+    return {k: user.get(f'{k}_unit') or u for k, u in UNITS.items()}
 
 
 UNITS = {
