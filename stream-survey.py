@@ -4,19 +4,9 @@ import typing
 import matplotlib.pyplot as plt
 
 from eprempy import eprem
-from eprempy import quantity
 from eprempy.paths import fullpath
 from support import plots
 from support import observers
-
-
-UNITS = {
-    'time': 'hour',
-    'energy': 'MeV',
-    'flux': '1 / (cm^2 s sr MeV/nuc)',
-    'fluence': '1 / (cm^2 sr MeV/nuc)',
-    'integral flux': '1 / (cm^2 s sr)',
-}
 
 
 def main(
@@ -63,7 +53,7 @@ def plot_stream(stream: eprem.Observer, **user):
     )
     location = observers.get_location(user)
     species = observers.get_species(user)
-    units = {q: user.get(f'{q}', u) for q, u in UNITS.items()}
+    units = {q: user.get(f'{q}', u) for q, u in observers.UNITS.items()}
     ylim = user.get('flux_ylim')
     plots.flux(axs[0], stream, location, species, units, ylim)
     ylim = user.get('fluence_ylim')
