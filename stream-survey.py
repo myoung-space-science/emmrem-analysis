@@ -22,7 +22,7 @@ def main(
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
-        plot_stream(stream, **user)
+        plot_stream(stream, user)
         plotpath = plotdir / stream.source.with_suffix('.png').name
         if verbose:
             print(f"Saved {plotpath}")
@@ -32,7 +32,7 @@ def main(
         plt.close()
 
 
-def plot_stream(stream: eprem.Observer, **user):
+def plot_stream(stream: eprem.Observer, user: dict):
     """Create a survey plot for this stream."""
     fig, axs = plt.subplots(
         nrows=1,
@@ -43,7 +43,7 @@ def plot_stream(stream: eprem.Observer, **user):
     )
     location = observers.get_location(user)
     species = observers.get_species(user)
-    units = {q: user.get(f'{q}', u) for q, u in observers.UNITS.items()}
+    units = observers.get_units(user)
     ylim = user.get('flux_ylim')
     plots.flux(stream, location, species, units, ylim, axes=axs[0])
     ylim = user.get('fluence_ylim')
