@@ -4,8 +4,13 @@ from eprempy import eprem
 from eprempy import quantity
 
 
-def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
+def get_streams(
+    source: typing.Optional[str]=None,
+    config: typing.Optional[str]=None,
+    num: typing.Optional[int]=None,
+) -> typing.List[eprem.Stream]:
     """Get all relevant stream observers."""
+    dataset = eprem.dataset(source=source, config=config)
     streams = dataset.streams
     if isinstance(num, int):
         return [streams[num]]
