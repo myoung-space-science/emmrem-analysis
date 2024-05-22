@@ -1,4 +1,5 @@
 import argparse
+import typing
 
 import matplotlib.pyplot as plt
 
@@ -9,18 +10,16 @@ from support import observers
 
 
 def main(
-    num: int=None,
-    indir: str=None,
-    config: str=None,
-    outdir: str=None,
+    num: typing.Optional[int]=None,
+    source: typing.Optional[str]=None,
+    config: typing.Optional[str]=None,
+    outdir: typing.Optional[str]=None,
     verbose: bool=False,
     **user
 ) -> None:
     """Create survey plots for one or more stream observers."""
-    source = indir or '.'
-    dataset = eprem.dataset(source=source, config=config)
-    streams = observers.get_streams(dataset, num)
-    plotdir = fullpath(outdir or source)
+    streams = observers.get_streams(source, config, num)
+    plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
         plot_stream(stream, **user)
@@ -71,7 +70,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-i', '--input',
-        dest='indir',
+        dest='source',
         help="directory containing simulation data (default: current)",
     )
     parser.add_argument(
