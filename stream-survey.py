@@ -110,7 +110,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--location',
-        help="location(s) at which to plot flux (default: 0)",
+        help="location(s) at which to plot quantities (default: 0)",
         nargs='*',
     )
     parser.add_argument(
