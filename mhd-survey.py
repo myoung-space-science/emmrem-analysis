@@ -7,37 +7,30 @@ from matplotlib.axes import Axes
 from eprempy import eprem
 from eprempy import quantity
 from eprempy.paths import fullpath
+from support import observers
 
 
 def main(
     num: int=None,
-    indir: str=None,
+    source: str=None,
     config: str=None,
     outdir: str=None,
     verbose: bool=False,
     **user
 ) -> None:
     """Plot a survey of MHD quantities for a given stream observer."""
-    source = indir or '.'
-    dataset = eprem.dataset(source=source, config=config)
-    streams = get_streams(dataset, num)
-    time = get_time(user)
-    location = get_location(user)
-    plotdir = fullpath(outdir or source)
+    streams = observers.get_streams(source, config, num)
+    plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
-        plot_stream(
-            stream,
-            time=time,
-            location=location,
-            ylog=user.get('ylog'),
-            ylims=get_ylims(user),
-        )
+        plot_stream(stream, user)
         plotname = f"mhd-{stream.source.stem}.png"
         plotpath = plotdir / plotname
         if verbose:
             print(f"Saved {plotpath}")
         plt.savefig(plotpath)
+        if user.get('show'):
+            plt.show()
         plt.close()
 
 
@@ -47,24 +40,6 @@ def get_streams(dataset: eprem.Dataset, num: typing.Optional[int]=None):
     if isinstance(num, int):
         return [streams[num]]
     return list(streams.values())
-
-
-def get_time(user: dict):
-    """Get the time at which to plot, if given."""
-    step = user.get('step')
-    if step is not None: # allow value to be 0
-        return step
-    if time := user.get('time'):
-        return quantity.measure(float(time[0]), time[1])
-
-
-def get_location(user: dict):
-    """Get the shell or radius at which to plot, if given."""
-    shell = user.get('shell')
-    if shell is not None: # allow value to be 0
-        return shell
-    if radius := user.get('radius'):
-        return quantity.measure(float(radius[0]), radius[1]).withunit('au')
 
 
 def get_ylims(user: dict):
@@ -83,13 +58,7 @@ SUBSETS = {
 }
 
 
-def plot_stream(
-    stream: eprem.Stream,
-    time: typing.Optional[typing.Union[int, quantity.Measurement]],
-    location: typing.Optional[typing.Union[int, quantity.Measurement]],
-    ylog: typing.Optional[typing.List[str]],
-    ylims: typing.Dict[str, typing.Optional[tuple]],
-) -> None:
+def plot_stream(stream: eprem.Stream, user: dict) -> None:
     """Create a survey plot for this stream."""
     fig, axs = plt.subplots(
         nrows=3,
@@ -98,23 +67,27 @@ def plot_stream(
     )
     # NOTE: Either time or location could be 0, so we can't rely on `if time and
     # not location` or `if location and not time`.
-    if time is None and location is not None:
+    if user['time'] is None and user['location'] is not None:
         f = plot_at_location
-        c = location
-    elif location is None and time is not None:
+        c = observers.get_locations(user)
+        u = 'hour'
+    elif ['location'] is None and ['time'] is not None:
         f = plot_at_time
-        c = time
+        c = observers.get_times(user)
+        u = 'au'
     else:
         raise ValueError(
-            f"Either time ({time}) or location ({location}) must be None"
+            f"One of either time or location must be None"
         ) from None
+    ylog = user.get('ylog')
+    ylims = get_ylims(user)
     if ylog == []:
         ylog = list(SUBSETS)
     elif ylog is None:
         ylog = []
     for i, key in enumerate(('B', 'U', 'rho')):
         yscale = 'log' if key in ylog else 'linear'
-        f(axs[i], key, stream, c, yscale, ylims[key])
+        f(axs[i], key, stream, c, u, yscale, ylims[key])
 
 
 LABELS = {
@@ -133,6 +106,7 @@ def plot_at_time(
     key: str,
     stream: eprem.Stream,
     time: typing.Union[int, quantity.Measurement],
+    unit: str,
     yscale: str,
     ylim: tuple,
 ) -> None:
@@ -141,10 +115,10 @@ def plot_at_time(
     plot_quantities(
         ax,
         key,
-        stream['radius'][indices].withunit('au').squeezed,
+        stream['radius'][indices].withunit(unit).squeezed,
         stream,
         indices,
-        "Radius [au]",
+        f"Radius [{unit}]",
         yscale,
         ylim,
     )
@@ -155,6 +129,7 @@ def plot_at_location(
     key: str,
     stream: eprem.Stream,
     location: typing.Union[int, quantity.Measurement],
+    unit: str,
     yscale: str,
     ylim: tuple,
 ) -> None:
@@ -162,10 +137,10 @@ def plot_at_location(
     plot_quantities(
         ax,
         key,
-        stream.times,
+        stream.times.withunit(unit),
         stream,
         (slice(None), location),
-        f"Time [{stream.times.unit}]",
+        f"Time [{unit}]",
         yscale,
         ylim,
     )
@@ -199,12 +174,17 @@ def plot_quantities(
     ax.label_outer()
 
 
-epilog = \
-"""
-Notes
------
-You must pass a constraint via one (and only one) of --step, --time, --shell, 
-or --radius.
+epilog = """
+Notes on time and location:
+    * You may provide a single value for both parameters, or a single value for
+      one and multiple values for the other. The latter case will produce a plot
+      with a line for each value of the multi-valued parameter.
+    * Passing a metric unit as the final argument to --time will cause this
+      routine to interpret the preceeding numerical values as physical times.
+      Otherwise, this routine will interpret them as time-step indices.
+    * Passing a metric unit as the final argument to --location will cause this
+      routine to interpret the preceeding numerical values as physical radii.
+      Otherwise, this routine will interpret them as shell indices.
 """
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -224,7 +204,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-i', '--input',
-        dest='indir',
+        dest='source',
         help="directory containing simulation data (default: current)",
     )
     parser.add_argument(
@@ -232,30 +212,15 @@ if __name__ == '__main__':
         dest='outdir',
         help="output directory (default: input directory)",
     )
-    constraint = parser.add_mutually_exclusive_group(required=True)
-    constraint.add_argument(
-        '--step',
-        help="time step at which to plot MHD quantities",
-        type=int,
-        nargs=1,
-    )
-    constraint.add_argument(
+    parser.add_argument(
         '--time',
-        help="time at which to plot MHD quantities",
-        nargs=2,
-        metavar=('TIME', 'UNIT'),
+        help="time(s) at which to plot MHD quantities (default: 0)",
+        nargs='*',
     )
-    constraint.add_argument(
-        '--shell',
-        help="shell at which to plot MHD quantities",
-        type=int,
-        nargs=1,
-    )
-    constraint.add_argument(
-        '--radius',
-        help="radius at which to plot MHD quantities",
-        nargs=2,
-        metavar=('RADIUS', 'UNIT'),
+    parser.add_argument(
+        '--location',
+        help="location(s) at which to plot MHD quantities (default: 0)",
+        nargs='*',
     )
     parser.add_argument(
         '--ylog',
@@ -287,6 +252,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '-v', '--verbose',
         help="print runtime messages",
+        action='store_true',
+    )
+    parser.add_argument(
+        '--show',
+        help="display the plot on the screen",
         action='store_true',
     )
     args = parser.parse_args()
