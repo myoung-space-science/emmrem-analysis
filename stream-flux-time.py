@@ -43,6 +43,11 @@ epilog = """
 The argument to --location may be one or more values followed by an optional
 metric unit. If the unit is present, this routine will interpret the values as
 radii. Otherwise, it will interpret the values as shell indices.
+
+DEPRECATION NOTICE
+------------------
+Please use stream-survey.py instead of this program.
+ 
 """
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
