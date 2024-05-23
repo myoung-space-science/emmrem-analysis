@@ -268,18 +268,21 @@ if __name__ == '__main__':
         help="magnetic-field y-axis limits",
         nargs=2,
         type=float,
+        metavar=("LO", 'HI'),
     )
     parser.add_argument(
         '--U-ylim',
         help="velocity-field y-axis limits",
         nargs=2,
         type=float,
+        metavar=("LO", 'HI'),
     )
     parser.add_argument(
         '--rho-ylim',
         help="density y-axis limits",
         nargs=2,
         type=float,
+        metavar=("LO", 'HI'),
     )
     parser.add_argument(
         '-v', '--verbose',
