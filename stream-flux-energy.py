@@ -111,7 +111,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-i', '--input',
-        dest='indir',
+        dest='source',
         help="directory containing simulation data (default: current)",
     )
     parser.add_argument(
