@@ -38,7 +38,7 @@ def flux(
             yvalmax = max(yvalmax, arraymax)
     ax.set_ylim(ylim or compute_yloglim(yvalmax))
     ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
-    ax.set_ylabel(r"Flux [1 / (cm$^2$ s sr MeV/nuc)]", fontsize=14)
+    ax.set_ylabel(fr"Flux [{units['flux']}]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
     ax.legend(
@@ -65,7 +65,7 @@ def fluence(
     ax.plot(energies, array)
     ax.set_ylim(ylim or compute_yloglim(numpy.max(array)))
     ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
-    ax.set_ylabel(r"Fluence [1 / (cm$^2$ sr MeV/nuc)]", fontsize=14)
+    ax.set_ylabel(fr"Fluence [{units['fluence']}]", fontsize=14)
     ax.set_xscale('log')
     ax.set_yscale('log')
 
@@ -95,7 +95,7 @@ def intflux(
             yvalmax = max(yvalmax, arraymax)
     ax.set_ylim(ylim or compute_yloglim(yvalmax))
     ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
-    ax.set_ylabel(r"Integral Flux [1 / (cm$^2$ s sr)]", fontsize=14)
+    ax.set_ylabel(fr"Integral Flux [{units['integral flux']}]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
     ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), handlelength=1.0)
