@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 from eprempy import eprem
 from eprempy import quantity
 from eprempy.paths import fullpath
-from support import observers
+from support import interfaces
 
 
 def main(
@@ -19,7 +19,7 @@ def main(
     **user
 ) -> None:
     """Plot a survey of MHD quantities for a given stream observer."""
-    streams = observers.get_streams(source, config, num)
+    streams = interfaces.get_streams(source, config, num)
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
@@ -69,11 +69,11 @@ def plot_stream(stream: eprem.Stream, user: dict) -> None:
     # not location` or `if location and not time`.
     if user['time'] is None and user['location'] is not None:
         f = plot_at_location
-        c = observers.get_locations(user)
+        c = interfaces.get_locations(user)
         u = 'hour'
     elif ['location'] is None and ['time'] is not None:
         f = plot_at_time
-        c = observers.get_times(user)
+        c = interfaces.get_times(user)
         u = 'au'
     else:
         raise ValueError(

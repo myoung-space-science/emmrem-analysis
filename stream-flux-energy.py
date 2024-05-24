@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from eprempy import eprem
 from eprempy import quantity
 from eprempy.paths import fullpath
-from support import observers
+from support import interfaces
 
 
 def main(
@@ -18,7 +18,7 @@ def main(
     **user
 ) -> None:
     """Plot flux versus energy on a given stream."""
-    streams = observers.get_streams(source, config, num)
+    streams = interfaces.get_streams(source, config, num)
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
@@ -38,13 +38,13 @@ def stream_flux(
     user: dict,
 ) -> None:
     """Plot the flux on a given stream."""
-    times = observers.get_times(user)
-    locations = observers.get_locations(user)
+    times = interfaces.get_times(user)
+    locations = interfaces.get_locations(user)
     ntimes = len(times)
     nlocations = len(locations)
-    units = {k: user.get(f'{k}_unit') or u for k, u in observers.UNITS.items()}
+    units = {k: user.get(f'{k}_unit') or u for k, u in interfaces.UNITS.items()}
     flux = stream['flux'].withunit(units['flux'])
-    species = observers.get_species(user)
+    species = interfaces.get_species(user)
     arrays = flux[times, locations, species, :].squeezed
     energies = stream.energies.withunit(units['energy'])
     if ntimes == 1 and nlocations == 1:

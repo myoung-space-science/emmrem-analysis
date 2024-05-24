@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 from eprempy import eprem
 from eprempy.paths import fullpath
+from support import interfaces
 from support import plots
-from support import observers
 
 
 def main(
@@ -18,7 +18,7 @@ def main(
     **user
 ) -> None:
     """Create survey plots for one or more stream observers."""
-    streams = observers.get_streams(source, config, num)
+    streams = interfaces.get_streams(source, config, num)
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
     for stream in streams:
@@ -46,9 +46,9 @@ def plot_stream(stream: eprem.Observer, user: dict):
         figsize=(width, 6),
         layout='constrained',
     )
-    location = observers.get_location(user)
-    species = observers.get_species(user)
-    units = observers.get_units(user)
+    location = interfaces.get_location(user)
+    species = interfaces.get_species(user)
+    units = interfaces.get_units(user)
     for ax, k in zip((axs if npanels > 1 else [axs]), panels):
         ylim = user.get(f'{k}_ylim')
         PANELS[k]['plotter'](stream, location, species, units, ylim, axes=ax)
