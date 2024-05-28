@@ -71,7 +71,7 @@ def plot_stream(stream: eprem.Stream, user: dict) -> None:
         f = plot_at_location
         c = interfaces.get_locations(user)
         u = 'hour'
-    elif ['location'] is None and ['time'] is not None:
+    elif user['location'] is None and user['time'] is not None:
         f = plot_at_time
         c = interfaces.get_times(user)
         u = 'au'
