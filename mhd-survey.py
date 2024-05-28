@@ -87,7 +87,7 @@ def plot_stream(stream: eprem.Stream, user: dict) -> None:
         ylog = []
     for i, key in enumerate(('B', 'U', 'rho')):
         yscale = 'log' if key in ylog else 'linear'
-        f(axs[i], key, stream, c, u, yscale, ylims[key])
+        f(axs[i], key, stream, c, u, yscale, user['xlim'], ylims[key])
 
 
 LABELS = {
@@ -108,6 +108,7 @@ def plot_at_time(
     time: typing.Union[int, quantity.Measurement],
     unit: str,
     yscale: str,
+    xlim: tuple,
     ylim: tuple,
 ) -> None:
     """Plot the given quantities at the given time."""
@@ -120,6 +121,7 @@ def plot_at_time(
         indices,
         f"Radius [{unit}]",
         yscale,
+        xlim,
         ylim,
     )
 
@@ -131,6 +133,7 @@ def plot_at_location(
     location: typing.Union[int, quantity.Measurement],
     unit: str,
     yscale: str,
+    xlim: tuple,
     ylim: tuple,
 ) -> None:
     """Plot the named quantities at the given location."""
@@ -142,6 +145,7 @@ def plot_at_location(
         (slice(None), location),
         f"Time [{unit}]",
         yscale,
+        xlim,
         ylim,
     )
 
@@ -154,6 +158,7 @@ def plot_quantities(
     indices: tuple,
     xlabel: str,
     yscale: str,
+    xlim: tuple,
     ylim: tuple,
 ) -> None:
     """Common plotting logic."""
@@ -168,6 +173,8 @@ def plot_quantities(
     ax.set_xlabel(xlabel, fontsize=14)
     ax.set_ylabel(f"[{y.unit.format('tex')}]")
     ax.set_yscale(yscale)
+    if xlim is not None:
+        ax.set_xlim(xlim)
     if ylim is not None:
         ax.set_ylim(ylim)
     ax.legend()
@@ -227,6 +234,13 @@ if __name__ == '__main__':
         help="log scale the y axis of all or some quantities",
         nargs='*',
         metavar=('B, U, rho'),
+    )
+    parser.add_argument(
+        '--xlim',
+        help="x-axis limits",
+        nargs=2,
+        type=float,
+        metavar=("LO", 'HI'),
     )
     parser.add_argument(
         '--B-ylim',
