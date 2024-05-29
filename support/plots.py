@@ -105,27 +105,6 @@ def compute_yloglim(maxval):
     return 10**(ylogmax-6), 10**ylogmax
 
 
-def make_suptitle(
-    stream: eprem.Stream,
-    location: typing.Union[int, quantity.Measurement],
-    species: typing.Union[int, str],
-) -> str:
-    """Create the top-level plot title."""
-    if isinstance(location, (quantity.Measurement, measured.Value)):
-        strloc = f"radius = {float(location)} {location.unit}"
-    elif isinstance(location, int):
-        strloc = f"shell = {location}"
-    else:
-        raise TypeError(location)
-    if isinstance(species, int):
-        strspe = f"species = {stream.species.data[species]}"
-    elif isinstance(species, str):
-        strspe = f"species = {species}"
-    else:
-        raise TypeError(species)
-    return f"{strloc} | {strspe}"
-
-
 def make_title(
     stream: eprem.Stream,
     user: dict,
