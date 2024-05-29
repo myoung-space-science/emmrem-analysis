@@ -1,14 +1,9 @@
 import argparse
-import math
 import typing
 
-import numpy
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from eprempy import eprem
 from eprempy.paths import fullpath
-from eprempy import quantity
 from support import interfaces
 from support import plots
 
@@ -25,8 +20,12 @@ def main(
     streams = interfaces.get_streams(source, config, num)
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
+    fig = plt.figure(figsize=(10, 6), layout='constrained')
+    ax = fig.gca()
     for stream in streams:
-        plot_flux_time(stream, user)
+        plots.flux_time(stream, user, axes=ax)
+        title = plots.make_title(stream, user)
+        ax.set_title(title, fontsize=20)
         plotpath = plotdir / stream.source.with_suffix('.png').name
         if verbose:
             print(f"Saved {plotpath}")
@@ -34,46 +33,6 @@ def main(
         if user.get('show'):
             plt.show()
         plt.close()
-
-
-def plot_flux_time(stream: eprem.Observer, user: dict):
-    """Plot flux versus time for this stream."""
-    fig = plt.figure(figsize=(10, 6), layout='constrained')
-    ax = fig.gca()
-    location = interfaces.get_location(user)
-    species = interfaces.get_species(user)
-    units = interfaces.get_units(user)
-    if user['energies']:
-        energies = quantity.measure(*user['energies'])
-    else:
-        energies = stream.energies.withunit(units['energy'])
-    flux = stream['flux'].withunit(units['flux'])
-    times = stream.times.withunit(units['time'])
-    cmap = mpl.colormaps['jet']
-    colors = cmap(numpy.linspace(0, 1, len(energies)))
-    yvalmax = None
-    for i, energy in enumerate(energies):
-        array = flux[:, location, species, energy].squeezed
-        label = f"{float(energy):.3f} {energies.unit}"
-        ax.plot(times, array, label=label, color=colors[i])
-        arraymax = numpy.max(array)
-        if yvalmax is None:
-            yvalmax = arraymax
-        else:
-            yvalmax = max(yvalmax, arraymax)
-    if user['ylim']:
-        ax.set_ylim(user['ylim'])
-    ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
-    ax.set_ylabel(fr"Flux [{units['flux']}]", fontsize=14)
-    ax.set_xscale('linear')
-    ax.set_yscale('log')
-    ax.legend(
-        loc='center left',
-        bbox_to_anchor=(1.0, 0.5),
-        handlelength=1.0,
-        ncols=math.ceil(len(energies) / 20),
-    )
-    fig.suptitle(plots.make_suptitle(stream, location, species), fontsize=20)
 
 
 epilog = """

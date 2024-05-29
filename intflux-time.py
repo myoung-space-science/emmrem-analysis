@@ -2,11 +2,8 @@ import argparse
 import typing
 
 import matplotlib.pyplot as plt
-import numpy
 
-from eprempy import eprem
 from eprempy.paths import fullpath
-from eprempy import quantity
 from support import interfaces
 from support import plots
 
@@ -23,8 +20,12 @@ def main(
     streams = interfaces.get_streams(source, config, num)
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
+    fig = plt.figure(figsize=(6, 6), layout='constrained')
+    ax = fig.gca()
     for stream in streams:
-        plot_stream_intflux(stream, user)
+        plots.intflux_time(stream, user)
+        title = plots.make_title(stream, user)
+        ax.set_title(title, fontsize=20)
         plotpath = plotdir / stream.source.with_suffix('.png').name
         if verbose:
             print(f"Saved {plotpath}")
@@ -32,39 +33,6 @@ def main(
         if user.get('show'):
             plt.show()
         plt.close()
-
-
-def plot_stream_intflux(stream: eprem.Observer, user: dict) -> None:
-    """Create a plot of integral flux versus time for this stream."""
-    location = interfaces.get_location(user)
-    species = interfaces.get_species(user)
-    units = interfaces.get_units(user)
-    intflux = stream['integral flux'].withunit(units['integral flux'])
-    if user['energies']:
-        energies = quantity.measure(*user['energies'])
-    else:
-        energies = quantity.measure(10.0, 50.0, 100.0, units['energy'])
-    times = stream.times.withunit(units['time'])
-    yvalmax = None
-    fig = plt.figure(figsize=(6, 6), layout='constrained')
-    ax = fig.gca()
-    for energy in energies:
-        array = intflux[:, location, species, energy].squeezed
-        label = fr"$\geq${float(energy)} {energies.unit}"
-        ax.plot(times, array, label=label)
-        arraymax = numpy.max(array)
-        if yvalmax is None:
-            yvalmax = arraymax
-        else:
-            yvalmax = max(yvalmax, arraymax)
-    if user['ylim']:
-        ax.set_ylim(user['ylim'])
-    ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
-    ax.set_ylabel(fr"Integral Flux [{units['integral flux']}]", fontsize=14)
-    ax.set_xscale('linear')
-    ax.set_yscale('log')
-    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), handlelength=1.0)
-    fig.suptitle(plots.make_suptitle(stream, location, species), fontsize=20)
 
 
 epilog = """

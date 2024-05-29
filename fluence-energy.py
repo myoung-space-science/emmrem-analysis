@@ -3,9 +3,9 @@ import typing
 
 import matplotlib.pyplot as plt
 
-from eprempy import eprem
 from eprempy.paths import fullpath
 from support import interfaces
+from support import plots
 
 
 def main(
@@ -20,8 +20,12 @@ def main(
     streams = interfaces.get_streams(source, config, num)
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
+    fig = plt.figure(figsize=(6, 6), layout='constrained')
+    ax = fig.gca()
     for stream in streams:
-        plot_stream_fluence(stream, user)
+        plots.fluence_energy(stream, user, axes=ax)
+        title = plots.make_title(stream, user)
+        ax.set_title(title, fontsize=20)
         plotpath = plotdir / stream.source.with_suffix('.png').name
         if verbose:
             print(f"Saved {plotpath}")
@@ -29,25 +33,6 @@ def main(
         if user.get('show'):
             plt.show()
         plt.close()
-
-
-def plot_stream_fluence(stream: eprem.Observer, user: dict) -> None:
-    """Create a plot of fluence versus energy for this stream."""
-    location = interfaces.get_location(user)
-    species = interfaces.get_species(user)
-    units = interfaces.get_units(user)
-    fluence = stream['fluence'].withunit(units['fluence'])
-    energies = stream.energies.withunit(units['energy'])
-    array = fluence[-1, location, species, :].squeezed
-    fig = plt.figure(figsize=(6, 6), layout='constrained')
-    ax = fig.gca()
-    ax.plot(energies, array)
-    if user['ylim']:
-        ax.set_ylim(user['ylim'])
-    ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
-    ax.set_ylabel(fr"Fluence [{units['fluence']}]", fontsize=14)
-    ax.set_xscale('log')
-    ax.set_yscale('log')
 
 
 epilog = """
