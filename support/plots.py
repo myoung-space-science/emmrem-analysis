@@ -21,7 +21,7 @@ def flux_time(
     location = interfaces.get_location(user)
     species = interfaces.get_species(user)
     units = interfaces.get_units(user)
-    if user['energies']:
+    if user.get('energies'):
         energies = quantity.measure(*user['energies'])
     else:
         energies = stream.energies.withunit(units['energy'])
@@ -34,7 +34,7 @@ def flux_time(
         array = flux[:, location, species, energy].squeezed
         label = f"{float(energy):.3f} {energies.unit}"
         ax.plot(times, array, label=label, color=colors[i])
-    if user['ylim']:
+    if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
     ax.set_ylabel(fr"Flux [{units['flux']}]", fontsize=14)
@@ -62,7 +62,7 @@ def fluence_energy(
     array = fluence[-1, location, species, :].squeezed
     ax = axes or plt.gca()
     ax.plot(energies, array)
-    if user['ylim']:
+    if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
     ax.set_ylabel(fr"Fluence [{units['fluence']}]", fontsize=14)
@@ -80,7 +80,7 @@ def intflux_time(
     species = interfaces.get_species(user)
     units = interfaces.get_units(user)
     intflux = stream['integral flux'].withunit(units['integral flux'])
-    if user['energies']:
+    if user.get('energies'):
         energies = quantity.measure(*user['energies'])
     else:
         energies = quantity.measure(10.0, 50.0, 100.0, units['energy'])
@@ -90,7 +90,7 @@ def intflux_time(
         array = intflux[:, location, species, energy].squeezed
         label = fr"$\geq${float(energy)} {energies.unit}"
         ax.plot(times, array, label=label)
-    if user['ylim']:
+    if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
     ax.set_ylabel(fr"Integral Flux [{units['integral flux']}]", fontsize=14)
