@@ -186,7 +186,6 @@ UNITS = {
 """Default units for observable quantities."""
 
 
-# TODO: Consider moving this to support/interfaces.py
 class Parser(argparse.ArgumentParser):
     """An argument parser with custom file-line parsing."""
 
