@@ -271,7 +271,11 @@ class ObserverStream(Stream):
         """Values from an observerable."""
         x = self.interface[self.quantity]
         this = x.withunit(self.data_unit) if self.data_unit else x
-        observed = this[self.time_step, ...]
+        indices = [self.time_step, slice(None)]
+        for k in ('species', 'energy', 'mu'):
+            if k in this.dimensions:
+                indices.append(self.physics.get(k) or 0)
+        observed = this[tuple(indices)]
         values = numpy.array(numpy.squeeze(observed.data), ndmin=1)
         if self.data_scale == 'log':
             values[numpy.where(values == 0)] = sys.float_info.min
