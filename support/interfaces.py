@@ -4,6 +4,7 @@ Command-line support for EPREM analysis programs.
 
 import argparse
 import pathlib
+import textwrap
 import typing
 
 from eprempy import eprem
@@ -183,4 +184,77 @@ UNITS = {
     'integral flux': '1 / (cm^2 s sr)',
 }
 """Default units for observable quantities."""
+
+
+# TODO: Consider moving this to support/interfaces.py
+class Parser(argparse.ArgumentParser):
+    """An argument parser with custom file-line parsing."""
+
+    def __init__(
+        self,
+        *args,
+        wrap: int=0,
+        ignore_missing_file: bool=False,
+        **kwargs,
+    ) -> None:
+        """
+        Parameters
+        ----------
+        *args
+            Any positional arguments accepted by `argparse.ArgumentParser`.
+
+        wrap : int, default=0
+            The column at which to wrap lines of text. Setting `wrap` <= 0
+            suppresses line wrapping.
+
+        ignore_missing_file : bool, default=false
+            If true, this will silently ignore a missing file name associated
+            with the `fromfile_prefix_char` option. For example, this allows
+            users to set the default name of a config file to "" in scripts. If
+            false (the default), passing an empty file name will cause an error.
+
+        **kwargs
+            Any keyword arguments accepted by `argparse.ArgumentParser`.
+        """
+        self.wrap = max(wrap, 0)
+        self.ignore_missing_file = ignore_missing_file
+        kwargs['epilog'] = self._update_text(kwargs['epilog'])
+        super().__init__(*args, **kwargs)
+
+    def add_argument(self, *args, **kwargs):
+        kwargs['help'] = self._update_text(kwargs['help'])
+        return super().add_argument(*args, **kwargs)
+
+    def _update_text(self, text: str) -> str:
+        """Update a string of text based on state attributes."""
+        if self.wrap:
+            wrapped = textwrap.wrap(text, width=self.wrap)
+            return '\n'.join(wrapped)
+        return text
+
+    def _read_args_from_files(
+        self,
+        arg_strings: typing.List[str],
+    ) -> typing.List[str]:
+        """Expand arguments referencing files.
+
+        This overloads the argparse.ArgumentParser method to support the
+        `ignore_missing_file` option (cf. `__init__`).
+        """
+        if self._removable_file(arg_strings):
+            arg_strings = [
+                s for s in arg_strings
+                if s != self.fromfile_prefix_chars
+            ]
+        return super()._read_args_from_files(arg_strings)
+
+    def _removable_file(self, arg_strings):
+        return (
+            self.fromfile_prefix_chars in arg_strings
+            and self.ignore_missing_file
+        )
+
+    def convert_arg_line_to_args(self, arg_line: str):
+        return arg_line.split()
+
 
