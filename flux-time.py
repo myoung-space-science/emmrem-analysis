@@ -20,9 +20,9 @@ def main(
     streams = interfaces.get_streams(source, config, num)
     plotdir = fullpath(outdir or source or '.')
     plotdir.mkdir(parents=True, exist_ok=True)
-    fig = plt.figure(figsize=(10, 6), layout='constrained')
-    ax = fig.gca()
     for stream in streams:
+        fig = plt.figure(figsize=(10, 6), layout='constrained')
+        ax = fig.gca()
         plots.flux_time(stream, user, axes=ax)
         title = plots.make_title(stream, user)
         ax.set_title(title, fontsize=20)
