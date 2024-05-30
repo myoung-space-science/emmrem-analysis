@@ -46,27 +46,23 @@ def plot_stream(stream: eprem.Observer, user: dict):
         figsize=(width, 6),
         layout='constrained',
     )
-    location = interfaces.get_location(user)
-    species = interfaces.get_species(user)
-    units = interfaces.get_units(user)
     for ax, k in zip((axs if npanels > 1 else [axs]), panels):
-        ylim = user.get(f'{k}_ylim')
-        PANELS[k]['plotter'](stream, location, species, units, ylim, axes=ax)
-    fig.suptitle(plots.make_suptitle(stream, location, species), fontsize=20)
+        PANELS[k]['plotter'](stream, user, axes=ax)
+    fig.suptitle(plots.make_title(stream, user), fontsize=20)
 
 
 PANELS = {
     'flux': {
         'width': 10,
-        'plotter': plots.flux,
+        'plotter': plots.flux_time,
     },
     'fluence': {
         'width': 5,
-        'plotter': plots.fluence,
+        'plotter': plots.fluence_energy,
     },
     'intflux': {
         'width': 5,
-        'plotter': plots.intflux,
+        'plotter': plots.intflux_time,
     },
 }
 
@@ -127,27 +123,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--energy-unit',
         help="metric unit in which to display energies",
-    )
-    parser.add_argument(
-        '--flux-ylim',
-        help="y-axis limits for flux, if applicable",
-        nargs=2,
-        type=float,
-        metavar=('LO', 'HI'),
-    )
-    parser.add_argument(
-        '--fluence-ylim',
-        help="y-axis limits for fluence, if applicable",
-        nargs=2,
-        type=float,
-        metavar=('LO', 'HI'),
-    )
-    parser.add_argument(
-        '--intflux-ylim',
-        help="y-axis limits for integral flux, if applicable",
-        nargs=2,
-        type=float,
-        metavar=('LO', 'HI'),
     )
     parser.add_argument(
         '-v', '--verbose',
