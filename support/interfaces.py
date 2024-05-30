@@ -257,3 +257,51 @@ class Parser(argparse.ArgumentParser):
         return arg_line.split()
 
 
+common = argparse.ArgumentParser(
+    formatter_class=argparse.RawTextHelpFormatter,
+    add_help=False,
+)
+"""Argument parser for common parameters."""
+
+common.add_argument(
+    '-n', '--stream',
+    dest='num',
+    help="which stream to show",
+    type=int,
+)
+common.add_argument(
+    '-c', '--config',
+    help="name of simulation configuration file (default: eprem.cfg)",
+)
+common.add_argument(
+    '-i', '--input',
+    dest='source',
+    help="directory containing simulation data (default: current)",
+)
+common.add_argument(
+    '-o', '--output',
+    dest='outdir',
+    help="output directory (default: input directory)",
+)
+common.add_argument(
+    '--location',
+    help="location(s) at which to plot flux (default: 0)",
+    nargs='*',
+)
+common.add_argument(
+    '--ylim',
+    help="y-axis limits",
+    nargs=2,
+    type=float,
+    metavar=('LO', 'HI'),
+)
+common.add_argument(
+    '-v', '--verbose',
+    help="print runtime messages",
+    action='store_true',
+)
+common.add_argument(
+    '--show',
+    help="display the plot on the screen",
+    action='store_true',
+)
