@@ -42,35 +42,11 @@ radii. Otherwise, it will interpret the values as shell indices. The argument to
 --energy behaves similarly.
 """
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
+    parser = interfaces.Parser(
         description=main.__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=epilog,
-    )
-    parser.add_argument(
-        '-n', '--stream',
-        dest='num',
-        help="which stream to show",
-        type=int,
-    )
-    parser.add_argument(
-        '-c', '--config',
-        help="name of simulation configuration file (default: eprem.cfg)",
-    )
-    parser.add_argument(
-        '-i', '--input',
-        dest='source',
-        help="directory containing simulation data (default: current)",
-    )
-    parser.add_argument(
-        '-o', '--output',
-        dest='outdir',
-        help="output directory (default: input directory)",
-    )
-    parser.add_argument(
-        '--location',
-        help="location(s) at which to plot flux (default: 0)",
-        nargs='*',
+        parents=[interfaces.common],
     )
     parser.add_argument(
         '--species',
@@ -85,23 +61,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--time-unit',
         help="metric unit in which to display times",
-    )
-    parser.add_argument(
-        '--ylim',
-        help="y-axis limits",
-        nargs=2,
-        type=float,
-        metavar=('LO', 'HI'),
-    )
-    parser.add_argument(
-        '-v', '--verbose',
-        help="print runtime messages",
-        action='store_true',
-    )
-    parser.add_argument(
-        '--show',
-        help="display the plot on the screen",
-        action='store_true',
     )
     args = parser.parse_args()
     main(**vars(args))
