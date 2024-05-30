@@ -38,7 +38,8 @@ def main(
 epilog = """
 The argument to --location may be one or more values followed by an optional
 metric unit. If the unit is present, this routine will interpret the values as
-radii. Otherwise, it will interpret the values as shell indices. The argument to --energy behaves similarly.
+radii. Otherwise, it will interpret the values as shell indices. The argument to
+--energy behaves similarly.
 """
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
