@@ -38,7 +38,7 @@ def flux_time(
     if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
-    ax.set_ylabel(fr"Flux [{units['flux']}]", fontsize=14)
+    ax.set_ylabel(fr"Flux [{flux.unit.format('tex')}]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
     ax.legend(
@@ -96,7 +96,7 @@ def flux_energy(
     if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
-    ax.set_ylabel(fr"Flux [{units['flux']}]", fontsize=14)
+    ax.set_ylabel(fr"Flux [{flux.unit.format('tex')}]", fontsize=14)
     ax.set_xscale('log')
     ax.set_yscale('log')
     if legend:
@@ -124,7 +124,7 @@ def fluence_energy(
     if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
-    ax.set_ylabel(fr"Fluence [{units['fluence']}]", fontsize=14)
+    ax.set_ylabel(fr"Fluence [{fluence.unit.format('tex')}]", fontsize=14)
     ax.set_xscale('log')
     ax.set_yscale('log')
 
@@ -152,7 +152,7 @@ def intflux_time(
     if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Time [{times.unit}]", fontsize=14)
-    ax.set_ylabel(fr"Integral Flux [{units['integral flux']}]", fontsize=14)
+    ax.set_ylabel(fr"Integral Flux [{intflux.unit.format('tex')}]", fontsize=14)
     ax.set_xscale('linear')
     ax.set_yscale('log')
     ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), handlelength=1.0)
