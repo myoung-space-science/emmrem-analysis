@@ -6,6 +6,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
+from eprempy import Observable
 from eprempy import eprem
 from eprempy import measured
 from eprempy import quantity
@@ -54,37 +55,56 @@ def flux_energy(
     axes: typing.Optional[Axes]=None,
 ) -> None:
     """Create a plot of flux versus energy for this stream."""
-    location = interfaces.get_location(user)
+    times = interfaces.get_times(user)
+    locations = interfaces.get_locations(user)
     species = interfaces.get_species(user)
     units = interfaces.get_units(user)
     flux = stream['flux'].withunit(units['flux'])
     energies = stream.energies.withunit(units['energy'])
-    # TODO:
-    # - single time; multiple locations
-    # - single location; multiple times
-    times = interfaces.get_times(user)
+    ax = axes or plt.gca()
     cmap = mpl.colormaps['jet']
     colors = cmap(numpy.linspace(0, 1, len(times)))
-    ax = axes or plt.gca()
-    for i, time in enumerate(times):
-        array = flux[time, location, species, :].squeezed
-        if isinstance(times, measured.Object):
-            label = f"t = {float(time):.3f} {times.unit}"
-        else:
-            label = f"time step {int(time)}"
-        ax.plot(energies, array, label=label, color=colors[i])
+    legend = False
+    if len(times) > 1 and len(locations) > 1:
+        raise ValueError
+    elif len(times) == 1 and len(locations) > 1:
+        colors = cmap(numpy.linspace(0, 1, len(locations)))
+        for i, location in enumerate(locations):
+            array = flux[times[0], location, species, :].squeezed
+            if isinstance(locations, measured.Object):
+                label = f"r = {float(location):.3f} {locations.unit}"
+            else:
+                label = f"shell = {int(location)}"
+            ax.plot(energies, array, label=label, color=colors[i])
+        ax.set_title(make_title(stream, user, ['time', 'species']))
+        legend = True
+    elif len(times) > 1 and len(locations) == 1:
+        colors = cmap(numpy.linspace(0, 1, len(times)))
+        for i, time in enumerate(times):
+            array = flux[time, locations[0], species, :].squeezed
+            if isinstance(times, measured.Object):
+                label = f"t = {float(time):.1f} {times.unit}"
+            else:
+                label = f"time step {int(time)}"
+            ax.plot(energies, array, label=label, color=colors[i])
+        ax.set_title(make_title(stream, user, ['location', 'species']))
+        legend = True
+    else:
+        array = flux[times[0], locations[0], species, :].squeezed
+        ax.plot(energies, array)
+        ax.set_title(make_title(stream, user, ['time', 'location', 'species']))
     if user.get('ylim'):
         ax.set_ylim(user['ylim'])
     ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
     ax.set_ylabel(fr"Flux [{units['flux']}]", fontsize=14)
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.legend(
-        loc='center left',
-        bbox_to_anchor=(1.0, 0.5),
-        handlelength=1.0,
-        ncols=math.ceil(len(times) / 20),
-    )
+    if legend:
+        ax.legend(
+            loc='center left',
+            bbox_to_anchor=(1.0, 0.5),
+            handlelength=1.0,
+        )
 
 
 def fluence_energy(
