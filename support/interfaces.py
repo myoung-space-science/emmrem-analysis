@@ -132,6 +132,12 @@ def get_streams(
     return list(streams.values())
 
 
+def get_time(user: dict):
+    """Get the time or step at which to plot."""
+    times = get_times(user)
+    return times[0]
+
+
 def get_times(user: dict):
     """Get appropriate times or steps from user input."""
     return compute_indexer(user.get('time'))
