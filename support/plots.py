@@ -48,6 +48,45 @@ def flux_time(
     )
 
 
+def flux_energy(
+    stream: eprem.Observer,
+    user: dict,
+    axes: typing.Optional[Axes]=None,
+) -> None:
+    """Create a plot of flux versus energy for this stream."""
+    location = interfaces.get_location(user)
+    species = interfaces.get_species(user)
+    units = interfaces.get_units(user)
+    flux = stream['flux'].withunit(units['flux'])
+    energies = stream.energies.withunit(units['energy'])
+    # TODO:
+    # - single time; multiple locations
+    # - single location; multiple times
+    times = interfaces.get_times(user)
+    cmap = mpl.colormaps['jet']
+    colors = cmap(numpy.linspace(0, 1, len(times)))
+    ax = axes or plt.gca()
+    for i, time in enumerate(times):
+        array = flux[time, location, species, :].squeezed
+        if isinstance(times, measured.Object):
+            label = f"t = {float(time):.3f} {times.unit}"
+        else:
+            label = f"time step {int(time)}"
+        ax.plot(energies, array, label=label, color=colors[i])
+    if user.get('ylim'):
+        ax.set_ylim(user['ylim'])
+    ax.set_xlabel(f"Energy [{energies.unit}]", fontsize=14)
+    ax.set_ylabel(fr"Flux [{units['flux']}]", fontsize=14)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.legend(
+        loc='center left',
+        bbox_to_anchor=(1.0, 0.5),
+        handlelength=1.0,
+        ncols=math.ceil(len(times) / 20),
+    )
+
+
 def fluence_energy(
     stream: eprem.Observer,
     user: dict,
