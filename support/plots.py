@@ -147,26 +147,36 @@ def compute_yloglim(maxval):
 def make_title(
     stream: eprem.Stream,
     user: dict,
+    keys: typing.Iterable[str],
 ) -> str:
     """Create a title string for plots."""
     parts = []
-    if 'location' in user:
+    if 'time' in keys and 'time' in user:
+        time = interfaces.get_time(user)
+        if isinstance(time, (quantity.Measurement, measured.Value)):
+            tmpstr = f"time = {float(time)} {time.unit}"
+        elif isinstance(time, int):
+            tmpstr = f"time step {time}"
+        else:
+            TypeError(time)
+        parts.append(tmpstr)
+    if 'location' in keys and 'location' in user:
         location = interfaces.get_location(user)
         if isinstance(location, (quantity.Measurement, measured.Value)):
-            strloc = f"radius = {float(location)} {location.unit}"
+            tmpstr = f"radius = {float(location)} {location.unit}"
         elif isinstance(location, int):
-            strloc = f"shell = {location}"
+            tmpstr = f"shell = {location}"
         else:
             raise TypeError(location)
-        parts.append(strloc)
-    if 'species' in user:
+        parts.append(tmpstr)
+    if 'species' in keys and 'species' in user:
         species = interfaces.get_species(user)
         if isinstance(species, int):
-            strspe = f"species = {stream.species.data[species]}"
+            tmpstr = f"species = {stream.species.data[species]}"
         elif isinstance(species, str):
-            strspe = f"species = {species}"
+            tmpstr = f"species = {species}"
         else:
             raise TypeError(species)
-        parts.append(strspe)
+        parts.append(tmpstr)
     return ' | '.join(parts)
 
