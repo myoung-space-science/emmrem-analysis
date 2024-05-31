@@ -24,7 +24,7 @@ def main(
         fig = plt.figure(figsize=(10, 6), layout='constrained')
         ax = fig.gca()
         plots.flux_time(stream, user, axes=ax)
-        title = plots.make_title(stream, user)
+        title = plots.make_title(stream, user, ['location', 'species'])
         ax.set_title(title, fontsize=20)
         plotpath = plotdir / stream.source.with_suffix('.png').name
         if verbose:

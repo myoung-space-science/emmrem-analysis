@@ -48,7 +48,8 @@ def plot_stream(stream: eprem.Observer, user: dict):
     )
     for ax, k in zip((axs if npanels > 1 else [axs]), panels):
         PANELS[k]['plotter'](stream, user, axes=ax)
-    fig.suptitle(plots.make_title(stream, user), fontsize=20)
+    title = plots.make_title(stream, user, ['location', 'species'])
+    fig.suptitle(title, fontsize=20)
 
 
 PANELS = {
